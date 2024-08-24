@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "webserver"
+version = "0.1.0"
+authors = [
+  { name="Nikolaos Chatzikonstantinou", email="nchatz314@gmail.com" },
+]
+description = "The Communal Growth webserver"
+readme = "README.txt"
+license = {file = "COPYING"}
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "litestar[standard, sqlalchemy]"
+]
+
+# [project.urls]
+# Homepage = "https://github.com/pypa/sampleproject"
+# Issues = "https://github.com/pypa/sampleproject/issues"

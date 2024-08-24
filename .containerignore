@@ -1,0 +1,6 @@
+*~
+/README.txt
+/.venv
+/.git
+/.gitignore
+*.pyc
