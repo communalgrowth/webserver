@@ -21,6 +21,6 @@ dependencies = [
     "litestar[standard, sqlalchemy]"
 ]
 
-# [project.urls]
-# Homepage = "https://github.com/pypa/sampleproject"
-# Issues = "https://github.com/pypa/sampleproject/issues"
+[project.urls]
+Homepage = "https://github.com/communalgrowth/webserver"
+Issues = "https://github.com/communalgrowth/webserver/issues"
