@@ -1,0 +1,51 @@
+# Modified from
+# <https://roger-that-dev.medium.com/push-code-with-github-actions-to-google-clouds-artifact-registry-60d256f8072f>.
+
+name: Push to Artifact Registry
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+env:
+  IMAGE_NAME: 'communalgrowth-image'
+  PROJECT_ID: 'communalgrowth'
+  AR_REPO_LOCATION: 'us-central1'
+  AR_URL: 'us-central1-docker.pkg.dev/communalgrowth/communalgrowth-artifact-registry'
+  SERVICE_ACCOUNT: 'my-service-account@communalgrowth.iam.gserviceaccount.com'
+  WORKLOAD_IDENTITY_PROVIDER: 'projects/938290517957/locations/global/workloadIdentityPools/github/providers/my-repo'
+
+jobs:
+  push_to_ar:
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: 'actions/checkout@v4'
+
+      - name: Google Auth
+        id: auth
+        uses: 'google-github-actions/auth@v2'
+        with:
+          token_format: 'access_token'
+          project_id: ${{ env.PROJECT_ID }}
+          service_account: ${{ env.SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ env.WORKLOAD_IDENTITY_PROVIDER }}
+
+      - name: Docker Auth
+        id: docker-auth
+        uses: 'docker/login-action@v3'
+        with:
+          username: 'oauth2accesstoken'
+          password: '${{ steps.auth.outputs.access_token }}'
+          registry: '${{ env.AR_REPO_LOCATION }}-docker.pkg.dev'
+
+      - name: Build and Push Container
+        run: |-
+          podman build -f Containerfile -t "${{ env.AR_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
+          podman push "${{ env.AR_URL }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
