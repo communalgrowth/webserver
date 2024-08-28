@@ -1,2 +1,4 @@
 *.pyc
 gha-creds-*.json
+*.egg-info
+/build
