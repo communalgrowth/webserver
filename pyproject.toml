@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "webserver"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
   { name="Nikolaos Chatzikonstantinou", email="nchatz314@gmail.com" },
 ]
@@ -24,3 +24,9 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/communalgrowth/webserver"
 Issues = "https://github.com/communalgrowth/webserver/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]

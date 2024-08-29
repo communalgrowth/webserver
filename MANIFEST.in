@@ -1,0 +1,2 @@
+include src/app/static/*
+include src/app/templates/*
