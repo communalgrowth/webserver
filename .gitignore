@@ -2,3 +2,4 @@
 gha-creds-*.json
 *.egg-info
 /build
+/.dir-locals.el

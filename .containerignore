@@ -6,3 +6,4 @@
 *.pyc
 gha-creds-*.json
 *.egg-info
+/.dir-locals.el
