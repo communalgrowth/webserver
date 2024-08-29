@@ -1,0 +1,27 @@
+{% extends "base.html.jinja2" %}
+{% block main_content %}
+<article>
+<h2>Submit your interests</h2>
+<p>Submit your interests by sending a specially formatted e-mail to <a href="mailto:submit@communalgrowth.org">submit@communalgrowth.org</a>. The contents of the e-mail should list the digital identifiers of the published documents you are interested in, and the subject line may be anything.</p>
+<h3>Example</h3>
+<p>For example, to attach your e-mail address to the list of those interested in <cite><a class="citation" href="https://press.princeton.edu/books/hardcover/9780691220390/advanced-classical-electromagnetism">R. Wald's "Advanced Classical Electromagnetism"</a></cite>, find the <a href="https://en.wikipedia.org/wiki/ISBN">ISBN-10</a> of the book, which is <code>0691220395</code>, and e-mail <a href="mailto:submit@communalgrowth.org">submit@communalgrowth.org</a> with <code>0691220395</code> in the message content:</p>
+<pre class="submit-example">
+To: submit@communalgrowth.org
+Subject: whatever
+-----------------------------
+0691220395
+</pre>
+<p>Your e-mail will then be added to the list of those who are interested in this book. You may send several e-mails of course, and even submit your e-mail to multiple books and articles at once:</p>
+<pre class="submit-example">
+To: submit@communalgrowth.org
+Subject: whatever
+-----------------------------
+0691220395
+10.1103/PhysRevD.13.191
+arXiv:1403.5335
+</pre>
+<p>Sending this e-mail will submit your e-mail for three documents: <cite><a class="citation" href="https://press.princeton.edu/books/hardcover/9780691220390/advanced-classical-electromagnetism">R. Wald's "Advanced Classical Electromagnetism"</a></cite>, <cite><a class="citation" href="https://doi.org/10.1103/PhysRevD.13.191">SW Hawking's "Black holes and thermodynamics"</a></cite>, and the preprint version of <cite><a class="citation" href="https://arxiv.org/abs/1403.5335">"The proof of the l<sup>2</sup> Decoupling Conjecture" by J. Bourgain and C. Demeter</a></cite>. The second identifier is a <a href="https://www.doi.org/">DOI</a> and the third is an <a href="https://arxiv.org/">arXiv</a> identifier.
+<h3>Supported digital identifiers</h3>
+<p>Currently we support ISBN-10, ISBN-13, <a href="https://www.doi.org/">DOI</a> and <a href="https://arxiv.org/">arXiv</a>.</p>
+</article>
+{% endblock %}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link href="static/style.css" rel="stylesheet" />
+    <title>{{ website_name }}</title>
+  </head>
+  <body>
+    <header><h1>{{ website_name }}</h1></header>
+    <nav>
+      <ul>
+        <li><a class="menu-button" href="/">home</a></li>
+        <li><a class="menu-button" href="/howto">how to</a></li>
+        <li><a class="menu-button" href="/search">search</a></li>
+        <li><a class="menu-button" href="/submit">submit</a></li>
+        <li><a class="menu-button" href="/contact">contact</a></li>
+      </ul>
+    </nav>
+    <main>
+      {% block main_content %}{% endblock %}
+      <aside>
+        <p>News</p>
+        <p><time datetime="2024-06-13">June 13 2024</time>: Website under construction.</p>
+      </aside>
+    </main>
+    <footer>
+      <p>Copyright &copy; 2024 Communal Growth, LLC.</p>
+    </footer>
+  </body>
+</html>

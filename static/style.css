@@ -1,0 +1,83 @@
+body {
+    text-align: center;
+    background-color: #F0EAD6; /* eggshell */
+}
+
+main {
+    display: flex;
+}
+
+main article {
+    flex: 3;
+    padding-right: 20px;
+}
+
+main aside {
+    flex: 1;
+    border-left: 10px double #FF6550;
+}
+
+nav ul {
+    display: flex;
+    flex: 2;
+    list-style-type: none;
+}
+
+nav li {
+    text-align: center;
+    flex: 1;
+}
+
+pre.submit-example {
+    display: inline-block;
+    padding: 6px;
+    justify-content: center;
+    text-align: left;
+    background-color: #D3D3D3;
+    border: 2px solid purple;
+}
+
+a.citation {
+    color: brown;
+    text-decoration: none;
+    border-bottom: 3px dotted;
+}
+
+a.menu-button:link, a.menu-button:visited {
+    font-weight: bold;
+    border: 1px solid #c96f2a;
+    border-radius: 20px;
+    color: black;
+    padding: 14px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+a.menu-button:hover, a.menu-button:active {
+    border: 1px solid transparent;
+    background-color:  #fc7562;
+}
+
+input[type=text] {
+    padding: 6px;
+    margin-top: 8px;
+    margin-right: 0px;
+    font-size: 27px;
+}
+
+.search-container {
+    align-items: center;
+}
+
+.search-container button {
+    padding: 8px;
+    background: #ddd;
+    font-size: 27px;
+    border: none;
+    cursor: pointer;
+}
+
+.search-container button:hover {
+    background: #ccc;
+}

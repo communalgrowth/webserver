@@ -1,0 +1,13 @@
+{% extends "base.html.jinja2" %}
+{% block main_content %}
+<article>
+<h2>Search for others with similar interests</h2>
+<p>Search for books and articles already submitted by others:</p><br />
+<div class="search-container">
+  <form action="/search" method="get">
+    <input type="text" name="d" placeholder="Search by title, ISBN, etc…" {% if search_value %} value="{{ search_value }}" {% endif %}>
+    <button type="submit">Search</button>
+  </form>
+</div>
+</article>
+{% endblock %}
