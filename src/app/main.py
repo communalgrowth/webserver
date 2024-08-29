@@ -1,4 +1,4 @@
-from importlib.resources import files
+from importlib.resources import files, as_file
 
 from litestar import Controller, Litestar, MediaType, Request, Response, get
 from litestar.status_codes import HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
@@ -11,9 +11,11 @@ from litestar.exceptions import HTTPException
 
 global_ctx = {"website_name": "Communal Growth"}
 
-static_router = create_static_files_router(
-    path="/static", directories=[files("static").name]
-)
+with as_file(files("app").joinpath("static")) as static_dir:
+    static_router = create_static_files_router(path="/static", directories=[static_dir])
+
+with as_file(files("app").joinpath("templates")) as templates_dir_str:
+    templates_dir = templates_dir_str
 
 
 def generic_exception_handler(_: Request, exc: Exception) -> Response:
@@ -63,9 +65,7 @@ class MyController(Controller):
 
 app = Litestar(
     route_handlers=[MyController, static_router],
-    template_config=TemplateConfig(
-        directory=files("templates").name, engine=JinjaTemplateEngine
-    ),
+    template_config=TemplateConfig(directory=templates_dir, engine=JinjaTemplateEngine),
     openapi_config=None,
     exception_handlers={
         HTTP_404_NOT_FOUND: server_error_404,
