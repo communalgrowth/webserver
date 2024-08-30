@@ -1,44 +1,116 @@
-import re
+import lark
+import enum
 
 
-def strip_isbn(s: str):
-    """Strips the ISBN part of an ISBN id"""
-    if not hasattr(strip_isbn, "r"):
-        setattr(strip_isbn, "r", re.compile("isbn", re.I))
-    if strip_isbn.r.match(s):
-        s = s[4:].lstrip()
-        if (
-            s.startswith("-10")
-            or s.startswith("-13")
-            or s.startswith("_10")
-            or s.startswith("_13")
-        ):
-            s = s[3:].lstrip()
-        if s.startswith(":"):
-            s = s[1:].lstrip()
-    return s
+class IDType(enum.Enum):
+    ISBN10 = enum.auto()
+    ISBN13 = enum.auto()
+    ARXIV = enum.auto()
+    DOI = enum.auto()
+    TITLE = enum.auto()
 
 
-def match_isbn10(s: str):
-    s = strip_isbn(s)
-    s = re.sub("[-_]", "", s)
-    return len(s) == 10 and s.isdigit()
+class MyTransformer(lark.Transformer):
+    def doi(self, xs):
+        return (IDType.DOI, xs[-1])
 
+    def doi_link(self, xs):
+        return xs[-1]
 
-def match_isbn13(s: str):
-    s = strip_isbn(s)
-    s = re.sub("[-_]", "", s)
-    return len(s) == 13 and s.isdigit()
+    def doi_name(self, xs):
+        return "/".join(xs)
+
+    def arxiv(self, xs):
+        return (IDType.ARXIV, str(xs[0]))
+
+    def arxiv_link(self, xs):
+        return xs[-1]
+
+    def arxiv_id(self, xs):
+        return xs[1]
+
+    def isbn_code(self, xs):
+        return "".join(xs)
+
+    def isbn(self, xs):
+        x = xs[-1]
+        if len(x) == 10:
+            return (IDType.ISBN10, x)
+        else:
+            return (IDType.ISBN13, x)
 
 
 def idparse(s: str):
     """Identify the type of format followed by s
 
     Can be one of:
-    1. ISBN-10
-    2. ISBN-13
+    1. ISBN (ISBN-10 or ISBN-13)
     3. DOI
     4. arXiv
-    5. Generic string
+    5. Title (book or article)
     """
-    return s
+    if not hasattr(idparse, "p"):
+        setattr(
+            idparse,
+            "p",
+            lark.Lark(
+                """
+?start: isbn
+      | arxiv
+      | doi
+
+// Parse a DOI.
+
+doi: doi_link "/"?
+   | DOI_LITERAL doi_name
+
+doi_link: HTTP? WWW? "doi.org/" doi_name
+
+doi_name: DOI_PREFIX "/" DOI_SUFFIX
+DOI_PREFIX: ALNUM+ (("." | "-") ALNUM+)*
+DOI_SUFFIX: ALNUM+ (("." | "-") ALNUM+)*
+DOI_LITERAL: "doi:"
+
+// Parse an arXiv identifier.
+
+arxiv: arxiv_id | arxiv_link
+arxiv_link: HTTP? WWW? "arxiv.org/" ("abs" | "pdf") "/" ARXIV_CODE ARXIV_VERSION?
+arxiv_id: ARXIV_LITERAL ":" ARXIV_CODE ARXIV_VERSION? ARXIV_CATEGORY?
+ARXIV_CODE: INT "." INT
+
+ARXIV_LITERAL.2: /arxiv/i
+ARXIV_CATEGORY: "[" WORD (("-" | ".") WORD)* "]"
+ARXIV_VERSION: "v" INT
+
+// Parse an ISBN number.
+
+isbn: ISBN_PREFIX? isbn_code
+
+isbn_code: INT ("-"? INT)*
+ISBN_PREFIX: ISBN_LITERAL (/[-_]/? ("10" | "13") (" " | ":"))? ":"?
+
+ISBN_LITERAL: /ISBN/i
+
+// Common tokens.
+HTTP: ("http" "s"? "://")
+WWW: "www."
+ALNUM: DIGIT | LETTER
+
+%import common.DIGIT
+%import common.LETTER
+%import common.INT
+%import common.WORD
+%ignore " "
+""",
+                parser="lalr",
+            ).parse,
+        )
+    s = s.strip()
+    try:
+        tree = idparse.p(s)
+        return MyTransformer().transform(tree)
+    except:
+        if "/" in s:
+            return (IDType.DOI, s)
+        else:
+            return (IDType.TITLE, s)
