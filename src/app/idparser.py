@@ -21,13 +21,13 @@ class MyTransformer(lark.Transformer):
         return "/".join(xs)
 
     def arxiv(self, xs):
-        return (IDType.ARXIV, str(xs[0]))
+        return (IDType.ARXIV, str(xs[1]))
 
-    def arxiv_link(self, xs):
-        return xs[-1]
-
-    def arxiv_id(self, xs):
-        return xs[1]
+    def arxiv_code(self, xs):
+        if len(xs) == 2:
+            return ".".join(xs)
+        else:
+            return ".".join(xs[:-1])
 
     def isbn_code(self, xs):
         return "".join(xs)
@@ -64,7 +64,7 @@ def idparse(s: str):
 doi: doi_link "/"?
    | DOI_LITERAL doi_name
 
-doi_link: HTTP? WWW? "doi.org/" doi_name
+doi_link: HTTP? WWW? /doi.org\//i doi_name
 
 doi_name: DOI_PREFIX "/" DOI_SUFFIX
 DOI_PREFIX: ALNUM+ (("." | "-") ALNUM+)*
@@ -73,12 +73,11 @@ DOI_LITERAL: "doi:"
 
 // Parse an arXiv identifier.
 
-arxiv: arxiv_id | arxiv_link
-arxiv_link: HTTP? WWW? "arxiv.org/" ("abs" | "pdf") "/" ARXIV_CODE ARXIV_VERSION?
-arxiv_id: ARXIV_LITERAL ":" ARXIV_CODE ARXIV_VERSION? ARXIV_CATEGORY?
-ARXIV_CODE: INT "." INT
+arxiv: arxiv_prefix arxiv_code ARXIV_CATEGORY? "/"?
+arxiv_prefix: HTTP? WWW? ((/arxiv.org\//i (/(abs)|(pdf)/i) "/") | ARXIV_LITERAL)
+arxiv_code: INT "." INT ARXIV_VERSION?
 
-ARXIV_LITERAL.2: /arxiv/i
+ARXIV_LITERAL.2: /arxiv:/i
 ARXIV_CATEGORY: "[" WORD (("-" | ".") WORD)* "]"
 ARXIV_VERSION: "v" INT
 
@@ -92,8 +91,8 @@ ISBN_PREFIX: ISBN_LITERAL (/[-_]/? ("10" | "13") (" " | ":"))? ":"?
 ISBN_LITERAL: /ISBN/i
 
 // Common tokens.
-HTTP: ("http" "s"? "://")
-WWW: "www."
+HTTP: /https?:\/\//i
+WWW: /www\./
 ALNUM: DIGIT | LETTER
 
 %import common.DIGIT
