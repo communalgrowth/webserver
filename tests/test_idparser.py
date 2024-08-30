@@ -136,6 +136,10 @@ def test_idparse():
                 "doi.org/10.1103/PhysRevD.13.191/",
             ],
         ),
+        dict(
+            expected=(IDType.TITLE, "Advanced Classical Electromagnetism"),
+            inputs=["Advanced Classical Electromagnetism"],
+        ),
     ]
     for datum in data:
         for input in datum["inputs"]:
