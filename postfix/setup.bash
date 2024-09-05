@@ -17,6 +17,7 @@ for u in admin forget subscribe support unsubscribe; do
 done
 
 xargs -a - postconf <<< "
+alias_maps=
 message_size_limit=512000
 mail_name=Postfix
 virtual_mailbox_domains=${FQDN}
