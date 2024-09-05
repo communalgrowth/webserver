@@ -17,9 +17,9 @@ for u in admin forget subscribe support unsubscribe; do
 done
 
 xargs -a - postconf <<< "
+smtpd_relay_restrictions=permit_mynetworks,reject_unauth_destination
 alias_maps=
 message_size_limit=512000
-mail_name=Postfix
 virtual_mailbox_domains=${FQDN}
 virtual_mailbox_base=/var/mail/vhosts
 virtual_mailbox_maps=hash:/etc/postfix/vmailbox
