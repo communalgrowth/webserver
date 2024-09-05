@@ -28,5 +28,6 @@ virtual_gid_maps=static:${user_id}
 "
 
 postmap /etc/postfix/vmailbox
-systemctl reload postfix >&/dev/null || systemctl start postfix
+postfix start >&/dev/null || postfix reload
+
 
