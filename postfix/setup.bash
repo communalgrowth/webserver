@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+#
+# IMPORTANT: Don't forget to generate a self-signed x509 certificate
+# with openssl at /etc/postfix/{cert,key}-mailserver.pem, and also
+# chown the files to postfix.
 
 USER=tiger
 FQDN=communalgrowth.org
@@ -34,8 +38,6 @@ for u in admin forget subscribe support unsubscribe; do
   printf "%s@%s\t\t%s/%s/\n" "$u" "$FQDN" "$FQDN" "$u" >> /etc/postfix/vmailbox
 done
 
-# IMPORTANT: Don't forget to generate a self-signed x509 certificate
-# with openssl at /etc/postfix/{cert,key}-mailserver.pem.
 (sed -e '/^$/d' | xargs -d '\n' postconf) <<< "
 mail_name = Postfix
 smtpd_banner = \$myhostname ESMTP \$mail_name
