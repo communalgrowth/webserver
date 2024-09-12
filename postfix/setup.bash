@@ -22,7 +22,7 @@ fi
 
 user_id=$(id -u "$USER")
 mkdir -p "/var/mail/vhosts/${FQDN}"
-mkdir /var/spool/postfix/opendkim
+mkdir /var/spool/postfix/{opendkim,postfwd}
 chown postfix:postfix /var/mail/vhosts
 chown "${USER}:${USER}" "/var/mail/vhosts/${FQDN}"
 chown opendkim:opendkim /var/spool/postfix/opendkim
