@@ -43,6 +43,11 @@ mail_name = Postfix
 smtpd_banner = \$myhostname ESMTP \$mail_name
 myhostname = mail.${FQDN}
 
+enable_long_queue_ids = yes
+smtpd_client_port_logging = yes
+
+biff = no
+
 policy-spf_time_limit = 3600s
 
 milter_default_action = reject
@@ -51,12 +56,17 @@ milter_protocol = 6
 smtpd_milters = unix:opendkim/opendkim.sock
 non_smtpd_milters = unix:opendkim/opendkim.sock
 
-smtpd_tls_security_level=encrypt
+mynetworks =
+smtpd_tls_security_level = encrypt
 smtpd_tls_cert_file = /etc/postfix/cert-mailserver.pem
 smtpd_tls_key_file = /etc/postfix/key-mailserver.pem
 smtpd_sender_restrictions = reject_non_fqdn_sender, reject_unknown_sender_domain, check_policy_service unix:postfwd/postfwd.sock
 smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
 smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination, check_policy_service unix:private/policy-spf
+smtpd_helo_required = yes
+smtpd_etrn_restrictions = reject
+strict_rfc821_envelopes = yes
+parent_domain_matches_subdomains =
 disable_vrfy_command = yes
 message_size_limit = 512000
 
