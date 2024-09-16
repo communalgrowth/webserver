@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "webserver"
-version = "0.2.0"
+version = "0.2.1"
 authors = [
   { name="Nikolaos Chatzikonstantinou", email="nchatz314@gmail.com" },
 ]
@@ -18,13 +18,18 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "dateparser",
+    "defusedxml",
+    "lark",
     "litestar[standard, sqlalchemy]",
-    "lark"
+    "nameparser",
+    "requests",
 ]
 
 [project.optional-dependencies]
 tests = [
-    "pytest"
+    "pytest",
+    "pytest-mock"
 ]
 
 [project.urls]
