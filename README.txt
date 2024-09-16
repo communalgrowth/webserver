@@ -10,3 +10,11 @@ Run the example with
   pip install .
   LITESTAR_APP=app.main:app litestar run --reload
 #+end_src
+
+* Change log
+
+The change log can be viewed with:
+
+#+begin_src sh
+  git tag --sort=committerdate | grep -E v[0-9]+\. | tac | xargs -d'\n' -L1 git tag -n9999
+#+end_src
