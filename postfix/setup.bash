@@ -6,12 +6,15 @@
 
 USER=tiger
 FQDN=communalgrowth.org
+MAILSERVER="mail.${FQDN}"
 
 printf "postfix postfix/main_mailer_type string 'Internet Site'\n" \
     | debconf-set-selections
+printf "opendmarc opendmarc/dbconfig-install boolean false\n" \
+    | debconf-set-selections
 DEBIAN_FRONTEND=noninteractive apt install -y \
-  postfix opendkim opendkim-tools postfix-policyd-spf-python postfwd
-adduser postfix opendkim
+  postfix opendkim opendkim-tools \
+  opendmarc postfix-policyd-spf-python postfwd
 
 if ! id "$USER" 2> /dev/null; then
     groupadd -g 1984 "$USER" && \
@@ -24,13 +27,15 @@ if ! id postfwd 2> /dev/null; then
     passwd -l postfwd
 fi
 
-user_id=$(id -u "$USER")
-mkdir -p "/var/mail/vhosts/${FQDN}"
-mkdir /var/spool/postfix/{opendkim,postfwd}
+usermod -a -G "opendkim,opendmarc,postfwd,${USER}" postfix
+mkdir -p -m755 /var/mail/vhosts
 chown postfix:postfix /var/mail/vhosts
+mkdir -p -m770 "/var/mail/vhosts/${FQDN}"
 chown "${USER}:${USER}" "/var/mail/vhosts/${FQDN}"
-chown opendkim:opendkim /var/spool/postfix/opendkim
-chown postfwd:postfwd /var/spool/postfix/postfwd
+for x in opendkim opendmarc postfwd; do
+    mkdir -p -m750 "/var/spool/postfix/${x}"
+    chown "${x}:${x}" "/var/spool/postfix/${x}"
+done
 
 # Set up virtual Maildirs.
 mv /etc/postfix/vmailbox /etc/postfix/vmailbox.old
@@ -38,10 +43,11 @@ for u in admin forget subscribe support unsubscribe; do
   printf "%s@%s\t\t%s/%s/\n" "$u" "$FQDN" "$FQDN" "$u" >> /etc/postfix/vmailbox
 done
 
+user_id=$(id -u "$USER")
 (sed -e '/^$/d' | xargs -d '\n' postconf) <<< "
 mail_name = Postfix
 smtpd_banner = \$myhostname ESMTP \$mail_name
-myhostname = mail.${FQDN}
+myhostname = ${MAILSERVER}
 
 enable_long_queue_ids = yes
 smtpd_client_port_logging = yes
@@ -53,8 +59,8 @@ policy-spf_time_limit = 3600s
 milter_default_action = reject
 milter_protocol = 6
 
-smtpd_milters = unix:opendkim/opendkim.sock
-non_smtpd_milters = unix:opendkim/opendkim.sock
+smtpd_milters = unix:opendkim/opendkim.sock,local:opendmarc/opendmarc.sock
+non_smtpd_milters = \$smtpd_milters
 
 smtpd_helo_restrictions = reject_unauth_pipelining, reject_non_fqdn_hostname
 mynetworks =
@@ -94,6 +100,21 @@ On-SignatureError       reject
 On-KeyNotFound          reject
 "
 
+cat > /etc/opendmarc.conf <<< "
+AuthservID OpenDMARC
+IgnoreAuthenticatedClients false
+PidFile /run/opendmarc/opendmarc.pid
+PublicSuffixList /usr/share/publicsuffix/public_suffix_list.dat
+RejectFailures true
+RequiredHeaders true
+SPFSelfValidate true
+Socket local:/var/spool/postfix/opendmarc/opendmarc.sock
+Syslog true
+TrustedAuthservIDs ${MAILSERVER}
+UMask 0002
+UserID opendmarc
+"
+
 cat >> /etc/postfix/master.cf <<< "
 policy-spf  unix  -       n       n       -       -       spawn
      user=nobody argv=/usr/bin/policyd-spf
@@ -127,7 +148,8 @@ postfwd --file /etc/postfwd.cf \
         --group postfwd \
         --proto unix \
         --port /var/spool/postfix/postfwd/postfwd.sock
-service opendkim restart
+systemctl restart opendkim
+systemctl restart opendmarc
 postalias /etc/aliases
 postmap /etc/postfix/vmailbox
 postfix start >&/dev/null || postfix reload
