@@ -30,10 +30,10 @@ def test_ok_response(response, expected):
 @pytest.mark.parametrize(
     "isbn_response, author_response, expected",
     [
-        (MyResponse(200), MyResponse(200), None),
-        (MyResponse(100), MyResponse(200), None),
-        (MyResponse(200), MyResponse(100), None),
-        (MyResponse(100), MyResponse(100), None),
+        (MyResponse(200), MyResponse(200), {}),
+        (MyResponse(100), MyResponse(200), {}),
+        (MyResponse(200), MyResponse(100), {}),
+        (MyResponse(100), MyResponse(100), {}),
         (
             MyResponse(
                 200,
@@ -46,30 +46,30 @@ def test_ok_response(response, expected):
                 ),
             ),
             MyResponse(200, dict(docs=[dict(author_name=["Roald Dahl"])])),
-            (
-                "Fantastic Mr. Fox",
-                "",
-                "1988-10-01T00:00:00Z",
-                ["R. Dahl"],
-                "0140328726",
-                "9780140328721",
+            dict(
+                title="Fantastic Mr. Fox",
+                subtitle="",
+                published="1988-10-01T00:00:00Z",
+                authors=["R. Dahl"],
+                isbn10="0140328726",
+                isbn13="9780140328721",
             ),
         ),
     ],
 )
-def test_resolve_isbn(mocker, isbn_response, author_response, expected):
+def test_lookup_isbn(mocker, isbn_response, author_response, expected):
     get = mocker.patch("requests.get")
     get.side_effect = [isbn_response, author_response]
-    assert docid.resolve_isbn("0140328726") == expected
+    assert docid.lookup_isbn("0140328726") == expected
 
 
 @pytest.mark.parametrize(
     "doi_response, expected",
     [
-        (MyResponse(200), None),
-        (MyResponse(100), None),
-        (MyResponse(200), None),
-        (MyResponse(100), None),
+        (MyResponse(200), {}),
+        (MyResponse(100), {}),
+        (MyResponse(200), {}),
+        (MyResponse(100), {}),
         (
             MyResponse(
                 200,
@@ -81,28 +81,28 @@ def test_resolve_isbn(mocker, isbn_response, author_response, expected):
                     )
                 ),
             ),
-            (
-                "Black hole explosions?",
-                "1974-03-01T00:00:00Z",
-                ["S. W. Hawking"],
-                "10.1038/248030a0",
+            dict(
+                title="Black hole explosions?",
+                published="1974-03-01T00:00:00Z",
+                authors=["S. W. Hawking"],
+                doi="10.1038/248030a0",
             ),
         ),
     ],
 )
-def test_resolve_doi(mocker, doi_response, expected):
+def test_lookup_doi(mocker, doi_response, expected):
     get = mocker.patch("requests.get")
     get.side_effect = [doi_response]
-    assert docid.resolve_doi("10.1038/248030a0") == expected
+    assert docid.lookup_doi("10.1038/248030a0") == expected
 
 
 @pytest.mark.parametrize(
     "arxiv_response, expected",
     [
-        (MyResponse(200), None),
-        (MyResponse(100), None),
-        (MyResponse(200), None),
-        (MyResponse(100), None),
+        (MyResponse(200), {}),
+        (MyResponse(100), {}),
+        (MyResponse(200), {}),
+        (MyResponse(100), {}),
         (
             MyResponse(
                 200,
@@ -127,21 +127,21 @@ def test_resolve_doi(mocker, doi_response, expected):
 </feed>
 """,
             ),
-            (
-                "Rigidity, graphs and Hausdorff dimension",
-                "2017-08-20T01:41:17Z",
-                [
+            dict(
+                title="Rigidity, graphs and Hausdorff dimension",
+                published="2017-08-20T01:41:17Z",
+                authors=[
                     "N. Chatzikonstantinou",
                     "A. Iosevich",
                     "S. Mkrtchyan",
                     "J. Pakianathan",
                 ],
-                "1708.05919",
+                arxiv="1708.05919",
             ),
         ),
     ],
 )
-def test_resolve_arxiv(mocker, arxiv_response, expected):
+def test_lookup_arxiv(mocker, arxiv_response, expected):
     get = mocker.patch("requests.get")
     get.side_effect = [arxiv_response]
-    assert docid.resolve_arxiv("1708.05919") == expected
+    assert docid.lookup_arxiv("1708.05919") == expected

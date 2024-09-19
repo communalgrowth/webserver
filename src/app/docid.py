@@ -5,6 +5,8 @@ import defusedxml.ElementTree as DET
 
 import datetime
 
+from .idparser import IDType, idparse
+
 nameparser.config.CONSTANTS.force_mixed_case_capitalization = True
 nameparser.config.CONSTANTS.string_format = "{last}"
 nameparser.config.CONSTANTS.initials_format = "{first} {middle}"
@@ -36,16 +38,16 @@ def normalize_human_name(name):
 # Try with:
 # ISBN-10: 0140328726
 # ISBN-13: 9780140328721
-def resolve_isbn(isbn):
-    """Resolve an ISBN-10 or ISBN-13 from openlibrary.org"""
+def lookup_isbn(isbn):
+    """Lookup an ISBN-10 or ISBN-13 from openlibrary.org"""
     isbn_url = f"https://openlibrary.org/isbn/{isbn}.json"
     authors_url = f"https://openlibrary.org/search.json?isbn={isbn}&fields=author_name"
     response = requests.get(isbn_url, headers=headers)
     if not ok_response(response):
-        return None
+        return {}
     response2 = requests.get(authors_url, headers=headers)
     if not ok_response(response2):
-        return None
+        return {}
     try:
         data = response.json()
         title = data["title"]
@@ -59,18 +61,25 @@ def resolve_isbn(isbn):
             normalize_human_name(x)
             for x in data2.get("docs", [{}])[0].get("author_name", ["Unknown"])
         ]
-        return (title, subtitle, date, authors, isbn_10, isbn_13)
+        return dict(
+            title=title,
+            subtitle=subtitle,
+            published=date,
+            authors=authors,
+            isbn10=isbn_10,
+            isbn13=isbn_13,
+        )
     except:
-        return None
+        return {}
 
 
 # Try with:
 # DOI: 10.1038/248030a0
-def resolve_doi(doi):
+def lookup_doi(doi):
     doi_url = f"https://api.crossref.org/works/{doi}"
     response = requests.get(doi_url, headers=headers)
     if not ok_response(response):
-        return None
+        return {}
     try:
         data = response.json()
         message = data["message"]
@@ -84,14 +93,14 @@ def resolve_doi(doi):
         for d in authors:
             name = normalize_human_name(f"{d['given']} {d['family']}")
             authors_list += [name]
-        return (title, date, authors_list, doi)
+        return dict(title=title, published=date, authors=authors_list, doi=doi)
     except:
-        return None
+        return {}
 
 
 # Try with:
 # arXiv: 1708.05919
-def resolve_arxiv(arxiv):
+def lookup_arxiv(arxiv):
     namespaces = dict(
         atom="http://www.w3.org/2005/Atom",
         opensearch="http://a9.com/-/spec/opensearch/1.1/",
@@ -100,12 +109,12 @@ def resolve_arxiv(arxiv):
     arxiv_url = f"http://export.arxiv.org/api/query?id_list={arxiv}"
     response = requests.get(arxiv_url, headers=headers)
     if not ok_response(response):
-        return None
+        return {}
     try:
         et = DET.fromstring(response.text)
         title = et.find("atom:entry/atom:title", namespaces)
         if title is None:
-            return None
+            return {}
         else:
             title = title.text
         published = et.find("atom:entry/atom:published", namespaces)
@@ -118,6 +127,21 @@ def resolve_arxiv(arxiv):
             authors += [normalize_human_name(author.text)]
         if not authors:
             authors = ["Unknown"]
-        return (title, published, authors, arxiv)
+        return dict(title=title, published=published, authors=authors, arxiv=arxiv)
     except:
-        return None
+        return {}
+
+
+def lookup_doc(doctype, docid):
+    """Find document details with an internet lookup.
+
+    Returns a dictionary with keys such as title, authors, etc."""
+    match doctype:
+        case x if x in [IDType.ISBN10, IDType.ISBN13]:
+            return lookup_isbn(docid)
+        case IDType.DOI:
+            return lookup_doi(docid)
+        case IDType.ARXIV:
+            return lookup_arxiv(docid)
+        case IDType.TITLE:
+            return {}
