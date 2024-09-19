@@ -23,7 +23,9 @@ dependencies = [
     "lark",
     "litestar[standard, sqlalchemy]",
     "nameparser",
+    "python-daemon",
     "requests",
+    "watchdog",
 ]
 
 [project.optional-dependencies]
@@ -31,6 +33,9 @@ tests = [
     "pytest",
     "pytest-mock"
 ]
+
+[project.scripts]
+maildirdaemon = "app.maildirdaemon:main"
 
 [project.urls]
 Homepage = "https://github.com/communalgrowth/webserver"
