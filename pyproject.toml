@@ -31,7 +31,12 @@ dependencies = [
 [project.optional-dependencies]
 tests = [
     "pytest",
-    "pytest-mock"
+    "pytest-mock",
+    "pytest-xdist",
+    "pytest_container"
+]
+dev = [
+    "black"
 ]
 
 [project.scripts]
