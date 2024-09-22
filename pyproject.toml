@@ -54,11 +54,11 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 minversion = "7.0"
-addopts = "-ra -m 'not (test_slow or test_online)'"
+addopts = "-ra -m 'not test_slow'"
 testpaths = [
     "tests",
 ]
 markers = [
-    "test_online: test requires internet connection.",
+    "test_podman_compose: test requires podman-compose(1).",
     "test_slow: test is slow."
 ]

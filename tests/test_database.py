@@ -7,10 +7,11 @@ import sqlalchemy.exc
 import sqlalchemy.orm
 
 from app.cgdb import Base
+from app.maildirdaemon import db_subscribe
+from fixture_mail import *
 
 COMPOSEFILE = "./tests/containers/postgresql.yml"
-
-pytestmark = [pytest.mark.test_online, pytest.mark.test_slow]
+pytestmark = [pytest.mark.test_podman_compose, pytest.mark.test_slow]
 
 
 def port_open(port):
@@ -71,7 +72,8 @@ def postgresql():
     # subprocess.run(["podman-compose", "-f", COMPOSEFILE, "down", "-t0"])
 
 
-def test_postgresql(postgresql):
+def test_db_subscribe_mail_text(postgresql, mail_text):
+    mail, actual = mail_text
     engine = sqlalchemy.create_engine(
         postgresql,
         pool_size=1,
@@ -80,4 +82,5 @@ def test_postgresql(postgresql):
     )
     Session = sqlalchemy.orm.sessionmaker(bind=engine)
     with Session() as session:
+        db_subscribe(session, mail)
         session.commit()

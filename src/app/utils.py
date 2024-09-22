@@ -11,3 +11,8 @@ def remove_first(predicate, xs):
             break
     if j:
         del xs[j]
+
+
+def splitlines_clean(s):
+    """Split lines, removing surrounding spaces, excluding empty lines and lines with spaces"""
+    return [x.strip() for x in s.splitlines() if x and not x.isspace()]

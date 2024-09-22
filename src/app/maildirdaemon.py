@@ -251,61 +251,61 @@ def main():
 
 # ----- CUT here ------------
 
-# Create the SQLAlchemy engine; the password is specified in the .pgpass file.
-engine = create_engine(
-    "postgresql+psycopg://tiger@localhost:5432/communalgrowth-database"
-)
+# # Create the SQLAlchemy engine; the password is specified in the .pgpass file.
+# engine = create_engine(
+#     "postgresql+psycopg://tiger@localhost:5432/communalgrowth-database"
+# )
 
-# Create all tables defined by Base subclasses
-Base.metadata.create_all(engine)
+# # Create all tables defined by Base subclasses
+# Base.metadata.create_all(engine)
 
-# Create a session
-Session = sessionmaker(bind=engine)
+# # Create a session
+# Session = sessionmaker(bind=engine)
 
-doc = Document(
-    title="Advanced Classical Electromagnetism",
-    type=DocType.BOOK,
-)
-author = Author(author="R. Wald")
-doc.authors += [author]
-user_1 = CGUser(email="george@example.com")
-user_2 = CGUser(email="christina@example.com")
+# doc = Document(
+#     title="Advanced Classical Electromagnetism",
+#     type=DocType.BOOK,
+# )
+# author = Author(author="R. Wald")
+# doc.authors += [author]
+# user_1 = CGUser(email="george@example.com")
+# user_2 = CGUser(email="christina@example.com")
 
-# SELECT statements.
-stmt = select(Document).where(Document.title == doc.title)
-stmt_u_1 = select(CGUser).where(CGUser.email == user_1.email)
+# # SELECT statements.
+# stmt = select(Document).where(Document.title == doc.title)
+# stmt_u_1 = select(CGUser).where(CGUser.email == user_1.email)
 
-with Session() as session:
-    # Insert the data
-    result = session.execute(stmt).one_or_none()
-    if not result:
-        session.add(doc)
-        session.commit()
-        doc.isbn10 = Isbn10(isbn10="0691220395")
-        doc.isbn13 = Isbn13(isbn13="9780691220390")
-        doc.cgusers += [user_1, user_2]
-        session.commit()
+# with Session() as session:
+#     # Insert the data
+#     result = session.execute(stmt).one_or_none()
+#     if not result:
+#         session.add(doc)
+#         session.commit()
+#         doc.isbn10 = Isbn10(isbn10="0691220395")
+#         doc.isbn13 = Isbn13(isbn13="9780691220390")
+#         doc.cgusers += [user_1, user_2]
+#         session.commit()
 
-    # Notice how we asked for a Document but we got the corresponding
-    # Isbn10 entry "for free" in x.isbn10! If it didn't exist, it'd be
-    # None.
-    x = session.query(Document).one()
-    print((x.id, x.title, x.authors, x.type, x.isbn10))
-    [print(f"{x.id} <-> {u.email}") for u in x.cgusers]
+#     # Notice how we asked for a Document but we got the corresponding
+#     # Isbn10 entry "for free" in x.isbn10! If it didn't exist, it'd be
+#     # None.
+#     x = session.query(Document).one()
+#     print((x.id, x.title, x.authors, x.type, x.isbn10))
+#     [print(f"{x.id} <-> {u.email}") for u in x.cgusers]
 
-    # We can just delete an association if we want.
+#     # We can just delete an association if we want.
 
-    # Let's delete the user entirely.
-    u_1 = session.execute(stmt_u_1).one()
-    session.delete(u_1[0])
-    # Let's only delete the association, keeping the user.  DELETE
-    # statement for the doc <-> user_2 association.
-    # The `sqlalchemy.exc.NoResultFound` exception will be thrown if
-    # the entry does not exist.
-    session.execute(
-        delete(cguser_document_association).where(
-            (cguser_document_association.c.email == user_2.email)
-            & (cguser_document_association.c.doc_id == doc.id)
-        )
-    )
-    session.commit()
+#     # Let's delete the user entirely.
+#     u_1 = session.execute(stmt_u_1).one()
+#     session.delete(u_1[0])
+#     # Let's only delete the association, keeping the user.  DELETE
+#     # statement for the doc <-> user_2 association.
+#     # The `sqlalchemy.exc.NoResultFound` exception will be thrown if
+#     # the entry does not exist.
+#     session.execute(
+#         delete(cguser_document_association).where(
+#             (cguser_document_association.c.email == user_2.email)
+#             & (cguser_document_association.c.doc_id == doc.id)
+#         )
+#     )
+#     session.commit()
