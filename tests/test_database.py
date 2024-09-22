@@ -65,11 +65,11 @@ def postgresql():
     # is thread-local and we may have issues with parallel test
     # execution.
     yield db_url
-    # Comment out the line below if you don't want the test to clean
-    # up the database. The database must be then manually be cleaned
-    # up with:
+    # Comment out the line below, or put a breakpoint if you don't
+    # want the test to clean up the database. The database must be
+    # then manually be cleaned up with:
     #     podman-compose -f tests/containers/postgresql.yml down -t0
-    # subprocess.run(["podman-compose", "-f", COMPOSEFILE, "down", "-t0"])
+    subprocess.run(["podman-compose", "-f", COMPOSEFILE, "down", "-t0"])
 
 
 def test_db_subscribe_mail_text(postgresql, mail_text):
