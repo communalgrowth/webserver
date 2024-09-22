@@ -6,13 +6,23 @@ import watchdog.observers
 import psycopg
 import sqlalchemy
 from .cgdb import Author, CGUser, Document, Isbn10, Isbn13, Doi, Arxiv
-from .parsemail import parse_mail_from_file, parse_address_from_file
+from .parsemail import parse_mail, parse_address
 from .idparser import IDType, idparse
 from .docid import lookup_doc
 from .utils import remove_first
 
 FQDN = "communalgrowth.org"
 DB_URL = "postgresql+psycopg://tiger@localhost:5432/communalgrowth-database"
+
+
+def call_with_mail(procedure, path):
+    """Call procedure with an EmailMessage from path
+
+    Returns the return value of procedure.
+    """
+    with open(path, "rb") as f:
+        mail = email.message_from_binary_file(f, policy=email.policy.EmailPolicy())
+    return procedure(mail)
 
 
 def make_doc(doctype, docdata):
@@ -77,17 +87,17 @@ def db_select_user(session, addr):
     return result
 
 
-def db_subscribe(Session, mail_path):
+def db_subscribe(Session, mail):
     """Subscribe user to document IDs
 
-    The mail_path denotes an e-mail sent by the user to the subscribe
-    address. It contains a list of document IDs, such as ISBN, doi,
-    arXiv IDs. These IDs will be looked up online if they are not
-    found in the database, and the user will be subscribed to these
-    IDs.
+    mail denotes an EmailMessage sent by the user to the subscribe
+    address. It contains in its body a list of document IDs, such as
+    ISBN, doi, arXiv IDs. These IDs will be looked up online if they
+    are not found in the database, and the user will be subscribed to
+    these IDs.
     """
     # Parse the sender address and textual body of the e-mail.
-    sender_addr, body = parse_mail_from_file(mail_path)
+    sender_addr, body = parse_mail(mail)
     # Apart from splitting on newlines, we also want to split on
     # commas.
     ids = [idparse(token) for line in body for token in line.split(",")]
@@ -119,16 +129,16 @@ def db_subscribe(Session, mail_path):
         session.commit()
 
 
-def db_unsubscribe(Session, mail_path):
+def db_unsubscribe(Session, mail):
     """Unsubscribe user from document IDs
 
-    The mail_path denotes an e-mail sent by the user to the subscribe
-    address. It contains a list of document IDs, such as ISBN, doi,
-    arXiv IDs. The user will be unsubscribed from these IDs. If the
-    user ends up with no subscriptions, the user is removed from the
-    database.
+    mail is an EmailMessage sent by the user to the subscribe
+    address. It contains in its body a list of document IDs, such as
+    ISBN, doi, arXiv IDs. The user will be unsubscribed from these
+    IDs. If the user ends up with no subscriptions, the user is
+    removed from the database.
     """
-    sender_addr, body = parse_mail_from_file(mail_path)
+    sender_addr, body = parse_mail(mail)
     ids = [idparse(token) for line in body for token in line.split(",")]
     ids = [(doctype, docid) for (doctype, docid) in ids if doctype != IDType.TITLE]
     with Session() as session:
@@ -162,13 +172,13 @@ def db_unsubscribe(Session, mail_path):
         session.commit()
 
 
-def db_forget(Session, mail_path):
+def db_forget(Session, mail):
     """Delete all mentions of user from database
 
-    The email in mail_path is parsed for the sender address and all
-    mentions of that address are removed from the database.
+    mail is an EmailMessage and the sender address and all mentions of
+    that address are removed from the database.
     """
-    sender_addr = parse_address_from_file(mail_path)
+    sender_addr = parse_address(mail)
     with Session() as session:
         result = session.query(CGUser).where(CGUser.email == sender_addr)
         if result:
@@ -188,19 +198,19 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
         match account:
             case "subscribe":
                 try:
-                    db_subscribe(self.Session, path)
+                    call_with_mail(db_subscribe, path)
                 except:
                     pass
                 path.unlink()
             case "unsubscribe":
                 try:
-                    db_unsubscribe(self.Session, path)
+                    call_with_mail(db_unsubscribe, path)
                 except:
                     pass
                 path.unlink()
             case "forget":
                 try:
-                    db_forget(self.Session, path)
+                    call_with_mail(db_forget, path)
                 except:
                     pass
                 path.unlink()
