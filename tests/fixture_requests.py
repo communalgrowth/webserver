@@ -23,31 +23,35 @@ class MockResponse:
         (MockResponse(100), MockResponse(200), {}),
         (MockResponse(200), MockResponse(100), {}),
         (MockResponse(100), MockResponse(100), {}),
-        (
-            MockResponse(
-                200,
-                dict(
-                    title="Fantastic Mr. Fox",
-                    subtitle="",
-                    publish_date="October 1, 1988",
-                    isbn_10=["0140328726"],
-                    isbn_13=["9780140328721"],
-                ),
-            ),
-            MockResponse(200, dict(docs=[dict(author_name=["Roald Dahl"])])),
+    ]
+)
+def isbn_and_author_empty_response(request):
+    return request.param
+
+
+@pytest.fixture
+def isbn_and_author_response():
+    return (
+        MockResponse(
+            200,
             dict(
                 title="Fantastic Mr. Fox",
                 subtitle="",
-                published="1988-10-01T00:00:00Z",
-                authors=["R. Dahl"],
-                isbn10="0140328726",
-                isbn13="9780140328721",
+                publish_date="October 1, 1988",
+                isbn_10=["0140328726"],
+                isbn_13=["9780140328721"],
             ),
         ),
-    ]
-)
-def isbn_and_author_response(request):
-    return request.param
+        MockResponse(200, dict(docs=[dict(author_name=["Roald Dahl"])])),
+        dict(
+            title="Fantastic Mr. Fox",
+            subtitle="",
+            published="1988-10-01T00:00:00Z",
+            authors=["R. Dahl"],
+            isbn10="0140328726",
+            isbn13="9780140328721",
+        ),
+    )
 
 
 @pytest.fixture(
@@ -56,28 +60,32 @@ def isbn_and_author_response(request):
         (MockResponse(100), {}),
         (MockResponse(200), {}),
         (MockResponse(100), {}),
-        (
-            MockResponse(
-                200,
-                dict(
-                    message=dict(
-                        title=["Black hole explosions?"],
-                        author=[dict(given="S. W.", family="HAWKING")],
-                        published={"date-parts": [[1974, 3, 1]]},
-                    )
-                ),
-            ),
-            dict(
-                title="Black hole explosions?",
-                published="1974-03-01T00:00:00Z",
-                authors=["S. W. Hawking"],
-                doi="10.1038/248030a0",
-            ),
-        ),
     ],
 )
-def doi_response(request):
+def doi_empty_response(request):
     return request.param
+
+
+@pytest.fixture
+def doi_response():
+    return (
+        MockResponse(
+            200,
+            dict(
+                message=dict(
+                    title=["Black hole explosions?"],
+                    author=[dict(given="S. W.", family="HAWKING")],
+                    published={"date-parts": [[1974, 3, 1]]},
+                )
+            ),
+        ),
+        dict(
+            title="Black hole explosions?",
+            published="1974-03-01T00:00:00Z",
+            authors=["S. W. Hawking"],
+            doi="10.1038/248030a0",
+        ),
+    )
 
 
 @pytest.fixture(
@@ -86,10 +94,18 @@ def doi_response(request):
         (MockResponse(100), {}),
         (MockResponse(200), {}),
         (MockResponse(100), {}),
-        (
-            MockResponse(
-                200,
-                text="""<?xml version="1.0" encoding="UTF-8"?>
+    ]
+)
+def arxiv_response_empty(request):
+    return request.param
+
+
+@pytest.fixture
+def arxiv_response():
+    return (
+        MockResponse(
+            200,
+            text="""<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <entry>
       <published>2017-08-20T01:41:17Z</published>
@@ -109,20 +125,16 @@ def doi_response(request):
   </entry>
 </feed>
 """,
-            ),
-            dict(
-                title="Rigidity, graphs and Hausdorff dimension",
-                published="2017-08-20T01:41:17Z",
-                authors=[
-                    "N. Chatzikonstantinou",
-                    "A. Iosevich",
-                    "S. Mkrtchyan",
-                    "J. Pakianathan",
-                ],
-                arxiv="1708.05919",
-            ),
         ),
-    ]
-)
-def arxiv_response(request):
-    return request.param
+        dict(
+            title="Rigidity, graphs and Hausdorff dimension",
+            published="2017-08-20T01:41:17Z",
+            authors=[
+                "N. Chatzikonstantinou",
+                "A. Iosevich",
+                "S. Mkrtchyan",
+                "J. Pakianathan",
+            ],
+            arxiv="1708.05919",
+        ),
+    )

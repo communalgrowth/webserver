@@ -18,6 +18,13 @@ def test_ok_response(response, expected):
     assert docid.ok_response(response) == expected
 
 
+def test_lookup_isbn_empty(mocker, isbn_and_author_empty_response):
+    isbn_response, author_response, expected = isbn_and_author_empty_response
+    get = mocker.patch("requests.get")
+    get.side_effect = [isbn_response, author_response]
+    assert docid.lookup_isbn(expected.get("isbn10", {})) == expected
+
+
 def test_lookup_isbn(mocker, isbn_and_author_response):
     isbn_response, author_response, expected = isbn_and_author_response
     get = mocker.patch("requests.get")
@@ -25,11 +32,25 @@ def test_lookup_isbn(mocker, isbn_and_author_response):
     assert docid.lookup_isbn(expected.get("isbn10", {})) == expected
 
 
+def test_lookup_doi_empty(mocker, doi_empty_response):
+    response, expected = doi_empty_response
+    get = mocker.patch("requests.get")
+    get.return_value = response
+    assert docid.lookup_doi(expected.get("doi", {})) == expected
+
+
 def test_lookup_doi(mocker, doi_response):
     response, expected = doi_response
     get = mocker.patch("requests.get")
     get.return_value = response
     assert docid.lookup_doi(expected.get("doi", {})) == expected
+
+
+def test_lookup_arxiv_empty(mocker, arxiv_response_empty):
+    response, expected = arxiv_response_empty
+    get = mocker.patch("requests.get")
+    get.return_value = response
+    assert docid.lookup_arxiv(expected.get("arxiv", {})) == expected
 
 
 def test_lookup_arxiv(mocker, arxiv_response):
