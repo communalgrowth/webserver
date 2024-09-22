@@ -52,24 +52,32 @@ def postgresql():
     port = podman_port(container_hash)[0]
     db_url = f"postgresql+psycopg://myuser:mypassword@localhost:{port}/mydatabase"
     ensure_database_ready(db_url)
+    engine = sqlalchemy.create_engine(
+        db_url,
+        pool_size=1,
+        max_overflow=1,
+        pool_pre_ping=True,
+    )
+    # Create the tables.
+    Base.metadata.create_all(engine)
+    # We yield the database URL instead of the engine because engine
+    # is thread-local and we may have issues with parallel test
+    # execution.
     yield db_url
     # Comment out the line below if you don't want the test to clean
     # up the database. The database must be then manually be cleaned
     # up with:
-    # podman-compose -f tests/containers/postgresql.yml down -t0
+    #     podman-compose -f tests/containers/postgresql.yml down -t0
     # subprocess.run(["podman-compose", "-f", COMPOSEFILE, "down", "-t0"])
 
 
 def test_postgresql(postgresql):
     engine = sqlalchemy.create_engine(
         postgresql,
-        # Pool size may be adjusted if multiple tests ran
-        # concurrently, say via `pytest -n auto`.
-        pool_size=10,
-        max_overflow=20,
+        pool_size=1,
+        max_overflow=1,
         pool_pre_ping=True,
     )
-    Base.metadata.create_all(engine)
     Session = sqlalchemy.orm.sessionmaker(bind=engine)
     with Session() as session:
         session.commit()
