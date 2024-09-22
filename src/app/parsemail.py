@@ -22,28 +22,31 @@ class MyHTMLParser(html.parser.HTMLParser):
             self.data.append(data)
 
 
-def parse_address(path):
-    """Retrieve the sender address from an email"""
-    with open(path, "rb") as f:
-        m = email.message_from_binary_file(f, policy=email.policy.EmailPolicy())
-    _, addr = email.utils.parseaddr(m["From"])
+def parse_address(mail):
+    """Retrieve the sender address from an EmailMessage"""
+    _, addr = email.utils.parseaddr(mail["From"])
     return addr
 
 
-def parse_mail(path):
-    """Retrieve the sender address and content body from an email
+def parse_address_from_file(path):
+    """Retrieve the sender address from an email stored in a file"""
+    with open(path, "rb") as f:
+        mail = email.message_from_binary_file(f, policy=email.policy.EmailPolicy())
+    return parse_address(mail)
+
+
+def parse_mail(mail):
+    """Retrieve the sender address and content body from an EmailMessage
 
     Returns a pair of the sender address and a list of sentences,
     stripped of HTML if present.
     """
-    with open(path, "rb") as f:
-        m = email.message_from_binary_file(f, policy=email.policy.EmailPolicy())
     # Grab the sender address.
-    _, addr = email.utils.parseaddr(m["From"])
+    _, addr = email.utils.parseaddr(mail["From"])
     # Grab the body (stripped of HTML, if present.)
     plain_body = ""
     html_body = ""
-    for part in m.walk():
+    for part in mail.walk():
         charset = part.get_content_charset() or "utf-8"
         match part.get_content_type():
             case "text/plain":
@@ -63,3 +66,14 @@ def parse_mail(path):
         parser.feed(html_body)
         body = parser.data
     return addr, body
+
+
+def parse_mail_from_file(path):
+    """Retrieve the sender address and content body from an email stored in a file
+
+    Returns a pair of the sender address and a list of sentences,
+    stripped of HTML if present.
+    """
+    with open(path, "rb") as f:
+        mail = email.message_from_binary_file(f, policy=email.policy.EmailPolicy())
+    return parse_mail(mail)

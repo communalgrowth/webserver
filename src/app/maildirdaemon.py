@@ -6,7 +6,7 @@ import watchdog.observers
 import psycopg
 import sqlalchemy
 from .cgdb import Author, CGUser, Document, Isbn10, Isbn13, Doi, Arxiv
-from .parsemail import parse_mail, parse_address
+from .parsemail import parse_mail_from_file, parse_address_from_file
 from .idparser import IDType, idparse
 from .docid import lookup_doc
 from .utils import remove_first
@@ -87,7 +87,7 @@ def db_subscribe(Session, mail_path):
     IDs.
     """
     # Parse the sender address and textual body of the e-mail.
-    sender_addr, body = parse_mail(mail_path)
+    sender_addr, body = parse_mail_from_file(mail_path)
     # Apart from splitting on newlines, we also want to split on
     # commas.
     ids = [idparse(token) for line in body for token in line.split(",")]
@@ -128,7 +128,7 @@ def db_unsubscribe(Session, mail_path):
     user ends up with no subscriptions, the user is removed from the
     database.
     """
-    sender_addr, body = parse_mail(mail_path)
+    sender_addr, body = parse_mail_from_file(mail_path)
     ids = [idparse(token) for line in body for token in line.split(",")]
     ids = [(doctype, docid) for (doctype, docid) in ids if doctype != IDType.TITLE]
     with Session() as session:
@@ -168,7 +168,7 @@ def db_forget(Session, mail_path):
     The email in mail_path is parsed for the sender address and all
     mentions of that address are removed from the database.
     """
-    sender_addr = parse_address(mail_path)
+    sender_addr = parse_address_from_file(mail_path)
     with Session() as session:
         result = session.query(CGUser).where(CGUser.email == sender_addr)
         if result:

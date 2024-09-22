@@ -23,6 +23,7 @@ dependencies = [
     "lark",
     "litestar[standard, sqlalchemy]",
     "nameparser",
+    "psycopg",
     "python-daemon",
     "requests",
     "watchdog",
@@ -33,7 +34,6 @@ tests = [
     "pytest",
     "pytest-mock",
     "pytest-xdist",
-    "pytest_container"
 ]
 dev = [
     "black"
@@ -52,3 +52,13 @@ include-package-data = true
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -m 'not (test_slow or test_online)'"
+testpaths = [
+    "tests",
+]
+markers = [
+    "test_online: test requires internet connection.",
+    "test_slow: test is slow."
+]
