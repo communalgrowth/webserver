@@ -6,7 +6,17 @@ import watchdog.observers
 import psycopg
 import sqlalchemy
 import sqlalchemy.orm
-from .cgdb import Author, Base, CGUser, Document, Isbn10, Isbn13, Doi, Arxiv
+from .cgdb import (
+    Author,
+    Base,
+    CGUser,
+    Document,
+    Isbn10,
+    Isbn13,
+    Doi,
+    Arxiv,
+    cguser_document_association,
+)
 from .parsemail import mail_to_docid, parse_address
 from .idparser import IDType, idparse
 from .docid import lookup_doc
@@ -151,7 +161,6 @@ def db_unsubscribe(Session, mail):
     IDs. If the user ends up with no subscriptions, the user is
     removed from the database.
     """
-    breakpoint()
     sender_addr, docids = mail_to_docid(mail)
     with Session() as session:
         user = db_select_user(session, sender_addr)
@@ -160,28 +169,14 @@ def db_unsubscribe(Session, mail):
         # TODO instead of this loop the deletion can be issued
         # directly to the database...  delete ... where user == myuser
         # and docid == mydocid ...
-        for doctype, docid in docids:
-            match doctype:
-                case IDType.ISBN10:
-                    remove_first(
-                        lambda doc: doc.isbn10 == docid,
-                        user.documents,
-                    )
-                case IDType.ISBN13:
-                    remove_first(
-                        lambda doc: doc.isbn13 == docid,
-                        user.documents,
-                    )
-                case IDType.DOI:
-                    remove_first(
-                        lambda doc: doc.doi == docid,
-                        user.documents,
-                    )
-                case IDType.ARXIV:
-                    remove_first(
-                        lambda doc: doc.isbn13 == docid,
-                        user.documents,
-                    )
+        docids = [
+            doc.id for doc in map(lambda d: db_select_doc(session, *d), docids) if doc
+        ]
+        session.query(cguser_document_association).filter(
+            cguser_document_association.c.email == sender_addr,
+            cguser_document_association.c.doc_id.in_(docids),
+        ).delete(synchronize_session="fetch")
+        # Delete the user if their subscriptions are empty.
         if not user.documents:
             session.delete(user)
         session.commit()
@@ -195,10 +190,11 @@ def db_forget(Session, mail):
     """
     sender_addr = parse_address(mail)
     with Session() as session:
-        result = session.query(CGUser).where(CGUser.email == sender_addr)
-        if result:
-            session.delete(result)
-            session.commit()
+        user = db_select_user(session, sender_addr)
+        if not user:
+            return
+        session.delete(user)
+        session.commit()
 
 
 class ProcessMaildir(watchdog.events.FileSystemEventHandler):
