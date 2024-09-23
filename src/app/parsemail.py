@@ -3,6 +3,7 @@ import email.utils
 import email.policy
 import html.parser
 from app import utils
+from app import idparser
 
 
 class MyHTMLParser(html.parser.HTMLParser):
@@ -59,3 +60,13 @@ def parse_mail(mail):
         parser.feed(html_body)
         body = parser.data
     return addr, body
+
+
+def mail_to_docid(mail):
+    """Retrieve the sender address and document IDs in the body of the EmailMessage"""
+    addr, body = parse_mail(mail)
+    ids = [idparser.idparse(token) for line in body for token in line.split(",")]
+    ids = [
+        (doctype, docid) for (doctype, docid) in ids if doctype != idparser.IDType.TITLE
+    ]
+    return addr, ids

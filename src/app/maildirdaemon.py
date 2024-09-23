@@ -5,8 +5,9 @@ import watchdog.events
 import watchdog.observers
 import psycopg
 import sqlalchemy
-from .cgdb import Author, CGUser, Document, Isbn10, Isbn13, Doi, Arxiv
-from .parsemail import parse_mail, parse_address
+import sqlalchemy.orm
+from .cgdb import Author, Base, CGUser, Document, Isbn10, Isbn13, Doi, Arxiv
+from .parsemail import mail_to_docid, parse_address
 from .idparser import IDType, idparse
 from .docid import lookup_doc
 from .utils import remove_first
@@ -33,7 +34,7 @@ def make_doc(doctype, docdata):
     match doctype:
         case x if x in [IDType.ISBN10, IDType.ISBN13]:
             isbn10 = Isbn10(isbn10=docdata["isbn10"])
-            isbn13 = Isbn10(isbn10=docdata["isbn13"])
+            isbn13 = Isbn13(isbn13=docdata["isbn13"])
             authors = [Author(author=author) for author in docdata["authors"]]
             doc = Document(
                 title=docdata["title"],
@@ -68,13 +69,29 @@ def db_select_doc(session, doctype, docid):
     result = None
     match doctype:
         case IDType.ISBN10:
-            result = session.query(Isbn10).where(Isbn10.isbn10 == docid).one_or_none()
+            result = (
+                session.query(Document)
+                .where(Document.isbn10.has(Isbn10.isbn10 == docid))
+                .one_or_none()
+            )
         case IDType.ISBN13:
-            result = session.query(Isbn13).where(Isbn13.isbn13 == docid).one_or_none()
+            result = (
+                session.query(Document)
+                .where(Document.isbn13.has(Isbn13.isbn13 == docid))
+                .one_or_none()
+            )
         case IDType.DOI:
-            result = session.query(Doi).where(Doi.Doi == docid).one_or_none()
+            result = (
+                session.query(Document)
+                .where(Document.doi.has(Doi.doi == docid))
+                .one_or_none()
+            )
         case IDType.ARXIV:
-            result = session.query(Arxiv).where(Arxiv.arxiv == docid).one_or_none()
+            result = (
+                session.query(Document)
+                .where(Document.arxiv.has(Arxiv.arxiv == docid))
+                .one_or_none()
+            )
     return result
 
 
@@ -97,11 +114,7 @@ def db_subscribe(Session, mail):
     these IDs.
     """
     # Parse the sender address and textual body of the e-mail.
-    sender_addr, body = parse_mail(mail)
-    # Apart from splitting on newlines, we also want to split on
-    # commas.
-    ids = [idparse(token) for line in body for token in line.split(",")]
-    ids = [(doctype, docid) for (doctype, docid) in ids if doctype != IDType.TITLE]
+    sender_addr, docids = mail_to_docid(mail)
     # For each requested ID, check if it already exists in the
     # database; if not, look it up on the internet first. Then proceed
     # to subscribing the user to the document.
@@ -110,7 +123,7 @@ def db_subscribe(Session, mail):
         if not user:
             user = CGUser(email=sender_addr)
             session.add(user)
-        for doctype, docid in ids:
+        for doctype, docid in docids:
             doc = db_select_doc(session, doctype, docid)
             if not doc:
                 # We need to lookup the document online because it
@@ -138,14 +151,16 @@ def db_unsubscribe(Session, mail):
     IDs. If the user ends up with no subscriptions, the user is
     removed from the database.
     """
-    sender_addr, body = parse_mail(mail)
-    ids = [idparse(token) for line in body for token in line.split(",")]
-    ids = [(doctype, docid) for (doctype, docid) in ids if doctype != IDType.TITLE]
+    breakpoint()
+    sender_addr, docids = mail_to_docid(mail)
     with Session() as session:
         user = db_select_user(session, sender_addr)
         if not user:
             return
-        for doctype, docid in ids:
+        # TODO instead of this loop the deletion can be issued
+        # directly to the database...  delete ... where user == myuser
+        # and docid == mydocid ...
+        for doctype, docid in docids:
             match doctype:
                 case IDType.ISBN10:
                     remove_first(
@@ -235,7 +250,7 @@ def main():
         # tables.
         Base.metadata.create_all(engine)
         # Create a session factory.
-        Session = sessionmaker(bind=engine)
+        Session = sqlalchemy.orm.sessionmaker(bind=engine)
         # Set up the Maildir event handler.
         event_handler = ProcessMaildir(Session)
         observer = watchdog.observers.Observer()
