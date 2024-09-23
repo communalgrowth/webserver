@@ -48,13 +48,16 @@ def idparse(s: str):
     3. DOI
     4. arXiv
     5. Title (book or article)
+
+    Returns an (IDType, String) pair, where the string is the
+    normalized version of the identifier.
     """
     if not hasattr(idparse, "p"):
         setattr(
             idparse,
             "p",
             lark.Lark(
-                """
+                r"""
 ?start: isbn
       | arxiv
       | doi
