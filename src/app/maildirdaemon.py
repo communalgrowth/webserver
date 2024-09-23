@@ -6,7 +6,7 @@ import watchdog.observers
 import psycopg
 import sqlalchemy
 import sqlalchemy.orm
-from .cgdb import (
+from app.cgdb import (
     Author,
     Base,
     CGUser,
@@ -17,10 +17,9 @@ from .cgdb import (
     Arxiv,
     cguser_document_association,
 )
-from .parsemail import mail_to_docid, parse_address
-from .idparser import IDType, idparse
-from .docid import lookup_doc
-from .utils import remove_first
+from app.parsemail import mail_to_docid, parse_address
+from app.idparser import IDType
+from app.docid import lookup_doc
 
 FQDN = "communalgrowth.org"
 DB_URL = "postgresql+psycopg://tiger@localhost:5432/communalgrowth-database"
