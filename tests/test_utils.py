@@ -6,14 +6,26 @@ from app import utils
 
 
 @pytest.mark.parametrize(
-    "predicate, xs, expected",
+    "s, expected",
     [
-        (lambda x: x == " ", [*"hello world"], [*"helloworld"]),
-        (lambda x: x == " ", [*"hello, friendly world"], [*"hello,friendly world"]),
-        (lambda x: x == " ", [*"helloworld"], [*"helloworld"]),
-        (lambda x: x == " ", [*""], [*""]),
+        ("   hello  there    \n\n\n\nworld\n\n", ["hello  there", "world"]),
+        ("\n\n\n", []),
     ],
 )
-def test_remove_first(predicate, xs, expected):
-    assert utils.remove_first(predicate, xs) == None
-    assert xs == expected
+def test_splitlines_clean(s, expected):
+    assert utils.splitlines_clean(s) == expected
+
+
+@pytest.mark.parametrize(
+    "s, expected",
+    [
+        (
+            "Single apostrophe is preserved: Matthew O'Brien (mathematician)",
+            "Single apostrophe is preserved Matthew O'Brien mathematician",
+        ),
+        ("UTF-8 紅樓夢!", "UTF8 紅樓夢"),
+        ("1+1=2.", "112"),
+    ],
+)
+def test_strip_to_alphanum(s, expected):
+    assert utils.strip_to_alphanum(s) == expected
