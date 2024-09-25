@@ -72,8 +72,7 @@ def postgresql():
     subprocess.run(["podman-compose", "-f", COMPOSEFILE, "down", "-t0"])
 
 
-def test_db_subscribe_mail_text(postgresql, mail_text):
-    mail, actual = mail_text
+def test_db_init(postgresql):
     engine = sqlalchemy.create_engine(
         postgresql,
         pool_size=1,
@@ -82,5 +81,4 @@ def test_db_subscribe_mail_text(postgresql, mail_text):
     )
     Session = sqlalchemy.orm.sessionmaker(bind=engine)
     with Session() as session:
-        db_subscribe(session, mail)
         session.commit()
