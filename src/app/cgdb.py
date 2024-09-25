@@ -1,20 +1,19 @@
 from __future__ import annotations
 from typing import List
 
-import enum
-
+from nameparser import HumanName
 from sqlalchemy import (
-    select,
-    create_engine,
-    delete,
+    func,
+    event,
+    Index,
     Table,
     Column,
     Integer,
     String,
     ForeignKey,
 )
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase, relationship
+from sqlalchemy.dialects.postgresql import TSVECTOR
 
 
 class Base(DeclarativeBase):
@@ -83,8 +82,16 @@ class Author(Base):
 
 class Document(Base):
     __tablename__ = "document"
+    __table_args__ = (
+        Index(
+            "idx_tsv_title",
+            "tsv_title",
+            postgresql_using="gin",
+        ),
+    )
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     title: Mapped[str] = mapped_column()
+    tsv_title = mapped_column(TSVECTOR)
     isbn10: Mapped["Isbn10"] = relationship(back_populates="document")
     isbn13: Mapped["Isbn13"] = relationship(back_populates="document")
     arxiv: Mapped["Arxiv"] = relationship(back_populates="document")
@@ -99,6 +106,17 @@ class Document(Base):
         back_populates="documents",
         passive_deletes=True,
     )
+
+
+@event.listens_for(Document, "before_insert")
+@event.listens_for(Document, "before_update")
+def populate_tsvector(mapper, connection, target):
+    del mapper, connection
+    author_last_names = " ".join(
+        map(lambda a: HumanName(a.author).last, target.authors)
+    )
+    title_and_authors = f"{target.title} {author_last_names}"
+    target.tsv_title = func.to_tsvector("english", title_and_authors)
 
 
 class Isbn10(Base):
