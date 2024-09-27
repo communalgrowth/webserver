@@ -17,12 +17,10 @@ from app.cgdb import (
     Arxiv,
     cguser_document_association,
 )
+from app.conf import DB_URL, FQDN
 from app.parsemail import mail_to_docid, parse_address
 from app.idparser import IDType
 from app.docid import lookup_doc
-
-FQDN = "communalgrowth.org"
-DB_URL = "postgresql+psycopg://tiger@localhost:5432/communalgrowth-database"
 
 
 def call_with_mail(procedure, path):
