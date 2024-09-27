@@ -1,13 +1,22 @@
 from importlib.resources import files, as_file
+from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
+
+import psycopg
 
 from litestar import Controller, Litestar, MediaType, Request, Response, get
-from litestar.status_codes import HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
 from litestar.contrib.jinja import JinjaTemplateEngine
-from litestar.response import Template
-from litestar.template.config import TemplateConfig
-from litestar.static_files import create_static_files_router
-from litestar.datastructures import CacheControlHeader
+from litestar.datastructures import CacheControlHeader, State
 from litestar.exceptions import HTTPException
+from litestar.response import Template
+from litestar.static_files import create_static_files_router
+from litestar.status_codes import HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
+from litestar.template.config import TemplateConfig
+
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+
+from app.conf import DB_URL
+from app.search import search_documents
 
 global_ctx = {"website_name": "Communal Growth"}
 
@@ -50,8 +59,10 @@ class MyController(Controller):
         return Template(template_name="howto.html.jinja2", context=global_ctx)
 
     @get("/search", cache_control=CacheControlHeader(no_store=True))
-    async def search(self, s: str = "") -> Template:
-        ctx = global_ctx | dict(search_value=s)
+    async def search(self, state: State, s: str = "") -> Template:
+        results = await search_documents(state.Session, s)
+        d = dict(search_value=s, results=results)
+        ctx = global_ctx | d
         return Template(template_name="search.html.jinja2", context=ctx)
 
     @get("/submit")
@@ -63,6 +74,20 @@ class MyController(Controller):
         return Template(template_name="contact.html.jinja2", context=global_ctx)
 
 
+@asynccontextmanager
+async def db_connection(app: Litestar) -> AsyncGenerator[None, None]:
+    engine = getattr(app.state, "engine", None)
+    if engine is None:
+        engine = create_async_engine(DB_URL)
+        setattr(app.state, "engine", engine)
+        Session = async_sessionmaker(bind=engine, expire_on_commit=False)
+        setattr(app.state, "Session", Session)
+    try:
+        yield
+    finally:
+        await engine.dispose()
+
+
 app = Litestar(
     route_handlers=[MyController, static_router],
     template_config=TemplateConfig(directory=templates_dir, engine=JinjaTemplateEngine),
@@ -71,4 +96,5 @@ app = Litestar(
         HTTP_404_NOT_FOUND: server_error_404,
         HTTPException: generic_exception_handler,
     },
+    lifespan=[db_connection],
 )

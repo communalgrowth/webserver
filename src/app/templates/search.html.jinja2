@@ -9,5 +9,16 @@
     <button type="submit">Search</button>
   </form>
 </div>
+<table>
+  <tr>
+    <th>Title</th>
+    <th>Author(s)</th>
+  </tr>
+  {% for result in results %}
+  <tr>
+    <td>{{ result[0] }}</td>
+    <td>{{ result[1] }}</td>
+  </tr>
+  {% endfor %}
 </article>
 {% endblock %}
