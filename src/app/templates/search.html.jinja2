@@ -10,6 +10,7 @@
   </form>
 </div>
 <table>
+{% if results %}
   <tr>
     <th>Title</th>
     <th>Author(s)</th>
@@ -20,5 +21,6 @@
     <td>{{ result[1] }}</td>
   </tr>
   {% endfor %}
+{% endif %}
 </article>
 {% endblock %}

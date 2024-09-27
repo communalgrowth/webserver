@@ -60,8 +60,13 @@ class MyController(Controller):
 
     @get("/search", cache_control=CacheControlHeader(no_store=True))
     async def search(self, state: State, s: str = "") -> Template:
-        results = await search_documents(state.Session, s)
-        d = dict(search_value=s, results=results)
+        d = dict(
+            search_value=s,
+            results=[],
+        )
+        if s:
+            results = await search_documents(state.Session, s)
+            d["results"] = results
         ctx = global_ctx | d
         return Template(template_name="search.html.jinja2", context=ctx)
 
