@@ -5,7 +5,7 @@
 <p>Search for books and articles already submitted by others:</p><br />
 <div class="search-container">
   <form action="/search" method="get">
-    <input type="text" name="s" placeholder="Search titles and author last names…" {% if search_value %} value="{{ search_value }}" {% endif %}>
+    <input type="text" name="s" placeholder="Title, author…" {% if search_value %} value="{{ search_value }}" {% endif %}>
     <button type="submit">Search</button>
   </form>
 </div>
