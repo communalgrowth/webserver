@@ -50,8 +50,8 @@ class MyController(Controller):
         return Template(template_name="howto.html.jinja2", context=global_ctx)
 
     @get("/search", cache_control=CacheControlHeader(no_store=True))
-    async def search(self, d: str = "") -> Template:
-        ctx = global_ctx | dict(search_value=d)
+    async def search(self, s: str = "") -> Template:
+        ctx = global_ctx | dict(search_value=s)
         return Template(template_name="search.html.jinja2", context=ctx)
 
     @get("/submit")
