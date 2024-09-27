@@ -3,16 +3,17 @@ from app.cgdb import Document
 from app.utils import strip_to_alphanum
 
 
-def search_documents(Session, search_term, limit=100):
+async def search_documents(Session, search_term, limit=100):
     """Search database documents (title and author last names)
 
-    Limits results up to 'limit' rows."""
+    Limits results up to 'limit' rows.
+    Session must be created by async_sessionmaker()."""
     stripped = strip_to_alphanum(search_term)
-    with Session() as session:
-        result = (
+    async with Session() as session:
+        results = (
             session.query(Document)
             .filter(Document.tsv_title.match(stripped))
             .limit(limit)
             .all()
         )
-    return result
+    return [(doc.title, ", ".join([a.author for a in doc.authors])) for doc in results]
