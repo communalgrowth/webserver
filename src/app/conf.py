@@ -1,2 +1,2 @@
-DB_URL = "postgresql+psycopg:///communalgrowth-database"
+DB_URL = "postgresql+psycopg://tiger@localhost:5432/communalgrowth-database"
 FQDN = "communalgrowth.org"
