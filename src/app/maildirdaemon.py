@@ -1,5 +1,7 @@
 import click
 import daemon
+import email
+import email.policy
 import pathlib
 import watchdog
 import watchdog.events
@@ -201,9 +203,9 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
         super().__init__()
         self.Session = Session
 
-    def on_closed(self, event):
+    def on_moved(self, event):
         """Callback when email arrives in Maildir"""
-        path = pathlib.Path(event.src_path)
+        path = pathlib.Path(event.dst_path)
         account = path.parents[-2].stem
         delivered = path.parents[-3].stem
         if delivered != "new":
