@@ -1,3 +1,4 @@
+import click
 import daemon
 import pathlib
 import watchdog
@@ -6,6 +7,7 @@ import watchdog.observers
 import psycopg
 import sqlalchemy
 import sqlalchemy.orm
+import os
 from app.cgdb import (
     Author,
     Base,
@@ -224,34 +226,51 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
                 path.unlink()
 
 
-def main():
-    wd = pathlib.Path("/var/mail/vhosts") / FQDN
-    with daemon.DaemonContext(
-        working_directory=str(wd),
-        detach_process=True,
-    ):
-        # Create the SQLAlchemy engine; the password is specified in
-        # the .pgpass file.
-        engine = sqlalchemy.create_engine(
-            DB_URL,
-            pool_size=1,
-            max_overflow=1,
-            pool_pre_ping=True,
-            connect_args={"sslmode": "require"},
-        )
-        # Create all tables defined by Base subclasses, i.e. all
-        # tables.
-        Base.metadata.create_all(engine)
-        # Create a session factory.
-        Session = sqlalchemy.orm.sessionmaker(bind=engine)
-        # Set up the Maildir event handler.
-        event_handler = ProcessMaildir(Session)
-        observer = watchdog.observers.Observer()
-        observer.schedule(event_handler, ".", recursive=True)
-        observer.start()
-        try:
-            while observer.is_alive():
-                observer.join(1)
-        finally:
-            observer.stop()
-            observer.join()
+def maildirdaemon():
+    # Create the SQLAlchemy engine; the password is specified in
+    # the .pgpass file.
+    engine = sqlalchemy.create_engine(
+        DB_URL,
+        pool_size=1,
+        max_overflow=1,
+        pool_pre_ping=True,
+        connect_args={"sslmode": "require"},
+    )
+    # Create all tables defined by Base subclasses, i.e. all
+    # tables.
+    Base.metadata.create_all(engine)
+    # Create a session factory.
+    Session = sqlalchemy.orm.sessionmaker(bind=engine)
+    # Set up the Maildir event handler.
+    event_handler = ProcessMaildir(Session)
+    observer = watchdog.observers.Observer()
+    observer.schedule(event_handler, ".", recursive=True)
+    observer.start()
+    try:
+        while observer.is_alive():
+            observer.join(1)
+    finally:
+        observer.stop()
+        observer.join()
+
+
+@click.command(context_settings=dict(help_option_names=["-h", "--help"]))
+@click.version_option(None, "-v", "--version", package_name="webserver")
+@click.option(
+    "-f", "--foreground", help="Run in the foreground", is_flag=True, default=False
+)
+def main(foreground):
+    wd = str(pathlib.Path("/var/mail/vhosts") / FQDN)
+    if foreground:
+        with daemon.DaemonContext(
+            working_directory=wd,
+            detach_process=True,
+        ):
+            maildirdaemon()
+    else:
+        os.chdir(wd)
+        maildirdaemon()
+
+
+if __name__ == "__main__":
+    main()
