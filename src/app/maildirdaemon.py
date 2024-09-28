@@ -27,16 +27,6 @@ from app.idparser import IDType
 from app.docid import lookup_doc
 
 
-def call_with_mail(procedure, path):
-    """Call procedure with an EmailMessage from path
-
-    Returns the return value of procedure.
-    """
-    with open(path, "rb") as f:
-        mail = email.message_from_binary_file(f, policy=email.policy.EmailPolicy())
-    return procedure(mail)
-
-
 def make_doc(doctype, docdata):
     """Return a newly-minted instance of a table entry for (doctype, docdata)
 
@@ -213,22 +203,31 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
         match account:
             case "subscribe":
                 try:
-                    call_with_mail(db_subscribe, path)
+                    self.call_with_mail(db_subscribe, path)
                 except:
                     pass
                 path.unlink()
             case "unsubscribe":
                 try:
-                    call_with_mail(db_unsubscribe, path)
+                    self.call_with_mail(db_unsubscribe, path)
                 except:
                     pass
                 path.unlink()
             case "forget":
                 try:
-                    call_with_mail(db_forget, path)
+                    self.call_with_mail(db_forget, path)
                 except:
                     pass
                 path.unlink()
+
+    def call_with_mail(self, procedure, path):
+        """Call procedure with self.Session and an EmailMessage from path
+
+        Returns the return value of procedure.
+        """
+        with open(path, "rb") as f:
+            mail = email.message_from_binary_file(f, policy=email.policy.EmailPolicy())
+            return procedure(self.Session, mail)
 
 
 def maildirdaemon():
