@@ -205,7 +205,7 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
 
     def on_moved(self, event):
         """Callback when email arrives in Maildir"""
-        path = pathlib.Path(event.dst_path)
+        path = pathlib.Path(event.dest_path)
         account = path.parents[-2].stem
         delivered = path.parents[-3].stem
         if delivered != "new":
