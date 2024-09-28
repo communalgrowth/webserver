@@ -3,9 +3,10 @@ import dateparser
 import requests
 import defusedxml.ElementTree as DET
 
+from importlib.metadata import version
 import datetime
 
-from .idparser import IDType, idparse
+from app.idparser import IDType
 
 nameparser.config.CONSTANTS.force_mixed_case_capitalization = True
 nameparser.config.CONSTANTS.string_format = "{last}"
@@ -13,7 +14,8 @@ nameparser.config.CONSTANTS.initials_format = "{first} {middle}"
 
 
 headers = {
-    "User-Agent": "CommunalGrowth_submit/1.0 (mailto:admin@communalgrowth.org; tel:+1-269-491-5579)"
+    "User-Agent": "CommunalGrowth/%s (mailto:admin@communalgrowth.org; tel:+1-269-491-5579)"
+    % version("webserver")
 }
 
 
