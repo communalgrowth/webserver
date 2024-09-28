@@ -205,6 +205,9 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
         """Callback when email arrives in Maildir"""
         path = pathlib.Path(event.src_path)
         account = path.parents[-2].stem
+        delivered = path.parents[-3].stem
+        if delivered != "new":
+            return
         match account:
             case "subscribe":
                 try:
@@ -261,7 +264,7 @@ def maildirdaemon():
 )
 def main(foreground):
     wd = str(pathlib.Path("/var/mail/vhosts") / FQDN)
-    if foreground:
+    if not foreground:
         with daemon.DaemonContext(
             working_directory=wd,
             detach_process=True,
