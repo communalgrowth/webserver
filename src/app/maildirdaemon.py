@@ -30,37 +30,24 @@ from app.docid import lookup_doc
 def make_doc(doctype, docdata):
     """Return a newly-minted instance of a table entry for (doctype, docdata)
 
-    docdata is expected to be the return value of docid.lookup_doc()"""
+    docdata is expected to be the return value of docid.lookup_doc().
+    Authors must be entered manually, because they should be first
+    looked up to check if they already exist in the database.
+    """
     doc = None
     match doctype:
         case x if x in [IDType.ISBN10, IDType.ISBN13]:
-            isbn10 = Isbn10(isbn10=docdata["isbn10"]) if docdata["isbn10"] else None
-            isbn13 = Isbn13(isbn13=docdata["isbn13"]) if docdata["isbn13"] else None
-            authors = [Author(author=author) for author in docdata["authors"]]
-            doc = Document(
-                title=docdata["title"],
-                authors=authors,
-            )
-            if isbn10:
-                doc.isbn10 = isbn10
-            if isbn13:
-                doc.isbn13 = isbn13
+            doc = Document(title=docdata["title"], authors=[])
+            if docdata["isbn10"]:
+                doc.isbn10 = Isbn10(isbn10=docdata["isbn10"])
+            if docdata["isbn13"]:
+                doc.isbn13 = Isbn13(isbn13=docdata["isbn13"])
         case IDType.DOI:
             doi = Doi(doi=docdata["doi"])
-            authors = [Author(author=author) for author in docdata["authors"]]
-            doc = Document(
-                title=docdata["title"],
-                doi=doi,
-                authors=authors,
-            )
+            doc = Document(title=docdata["title"], doi=doi, authors=[])
         case IDType.ARXIV:
             arxiv = Arxiv(arxiv=docdata["arxiv"])
-            authors = [Author(author=author) for author in docdata["authors"]]
-            doc = Document(
-                title=docdata["title"],
-                arxiv=arxiv,
-                authors=authors,
-            )
+            doc = Document(title=docdata["title"], arxiv=arxiv, authors=[])
     return doc
 
 
@@ -158,7 +145,17 @@ def db_subscribe(Session, mail):
                 # document and add it.
                 if not doc:
                     doc = make_doc(doctype, docdata)
-                    session.add(doc)
+                    if doc:
+                        for a in docdata["authors"]:
+                            result = (
+                                session.query(Author)
+                                .where(Author.author == a)
+                                .one_or_none()
+                            )
+                            if not result:
+                                result = Author(author=a)
+                            doc.authors.append(result)
+                        session.add(doc)
             if not any(sender_addr == user.email for user in doc.cgusers):
                 doc.cgusers.append(user)
         session.commit()
