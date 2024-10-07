@@ -129,7 +129,7 @@ def db_subscribe(Session, mail):
                     # The subscriber requested an ISBN10 document;
                     # first check that there is no corresponding
                     # ISBN13 already in the database.
-                    doc13 = db_select_doc(session, doctype, docdata["isbn13"])
+                    doc13 = db_select_doc(session, IDType.ISBN13, docdata["isbn13"])
                     if doc13:
                         doc = doc13
                         doc13.isbn13 = Isbn10(isbn10=docdata["isbn10"])
@@ -137,7 +137,7 @@ def db_subscribe(Session, mail):
                     # The subscriber requested an ISBN13 document;
                     # first check that there is no corresponding
                     # ISBN10 already in the database.
-                    doc10 = db_select_doc(session, doctype, docdata["isbn10"])
+                    doc10 = db_select_doc(session, IDType.ISBN10, docdata["isbn10"])
                     if doc10:
                         doc = doc10
                         doc10.isbn13 = Isbn13(isbn13=docdata["isbn13"])
