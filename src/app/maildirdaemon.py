@@ -199,7 +199,7 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
 
     def on_closed(self, event):
         """Callback when email arrives in Maildir"""
-        self.process_mail(event.dest_path)
+        self.process_mail(event.src_path)
 
     def process_mail(self, path):
         """Process received email
@@ -227,7 +227,7 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
                     pass
                 path.unlink()
 
-    def parse_account_from_mail(self, dest_path):
+    def parse_account_from_mail(self, path):
         """Skip e-mail not in correct Maildir with correct account
 
         Return None or the account string, i.e. one of:
@@ -235,7 +235,9 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
         - "unsubscribe"
         - "forget"
         """
-        path = pathlib.Path(dest_path)
+        if not path:
+            return None
+        path = pathlib.Path(path)
         account = path.parents[-2].stem
         delivered = path.parents[-3].stem
         if delivered != "new":
