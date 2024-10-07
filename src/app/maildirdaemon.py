@@ -261,7 +261,7 @@ def maildirdaemon():
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.version_option(None, "-v", "--version", package_name="webserver")
 @click.option(
-    "-f", "--foreground", help="Run in the foreground", is_flag=True, default=False
+    "-f", "--foreground", help="Run in the foreground.", is_flag=True, default=False
 )
 def main(foreground):
     wd = str(pathlib.Path("/var/mail/vhosts") / FQDN)
