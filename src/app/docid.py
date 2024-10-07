@@ -56,8 +56,8 @@ def lookup_isbn(isbn):
         subtitle = data.get("subtitle", "")
         publish_date = data.get("publish_date", "1984-01-01")
         date = dateparser.parse(publish_date).strftime("%Y-%m-%dT%H:%M:%SZ")
-        isbn_10 = data.get("isbn_10", ["0000000000"])[0]
-        isbn_13 = data.get("isbn_13", ["0000000000000"])[0]
+        isbn_10 = data.get("isbn_10", [None])[0]
+        isbn_13 = data.get("isbn_13", [None])[0]
         data2 = response2.json()
         authors = [
             normalize_human_name(x)

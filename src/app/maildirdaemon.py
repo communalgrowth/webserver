@@ -34,15 +34,17 @@ def make_doc(doctype, docdata):
     doc = None
     match doctype:
         case x if x in [IDType.ISBN10, IDType.ISBN13]:
-            isbn10 = Isbn10(isbn10=docdata["isbn10"])
-            isbn13 = Isbn13(isbn13=docdata["isbn13"])
+            isbn10 = Isbn10(isbn10=docdata["isbn10"]) if docdata["isbn10"] else None
+            isbn13 = Isbn13(isbn13=docdata["isbn13"]) if docdata["isbn13"] else None
             authors = [Author(author=author) for author in docdata["authors"]]
             doc = Document(
                 title=docdata["title"],
-                isbn10=isbn10,
-                isbn13=isbn13,
                 authors=authors,
             )
+            if isbn10:
+                doc.isbn10 = isbn10
+            if isbn13:
+                doc.isbn13 = isbn13
         case IDType.DOI:
             doi = Doi(doi=docdata["doi"])
             authors = [Author(author=author) for author in docdata["authors"]]
