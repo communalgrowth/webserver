@@ -27,14 +27,11 @@ from app.idparser import IDType
 from app.docid import lookup_doc
 
 
-def make_doc(doctype, docdata):
+def make_doc(session, doctype, docdata):
     """Return a newly-minted instance of a table entry for (doctype, docdata)
 
     docdata is expected to be the return value of docid.lookup_doc().
-    Authors must be entered manually, because they should be first
-    looked up to check if they already exist in the database.
     """
-    doc = None
     match doctype:
         case x if x in [IDType.ISBN10, IDType.ISBN13]:
             doc = Document(title=docdata["title"], authors=[])
@@ -48,6 +45,14 @@ def make_doc(doctype, docdata):
         case IDType.ARXIV:
             arxiv = Arxiv(arxiv=docdata["arxiv"])
             doc = Document(title=docdata["title"], arxiv=arxiv, authors=[])
+        case _:
+            return None
+    for a in docdata["authors"]:
+        result = session.query(Author).where(Author.author == a).one_or_none()
+        # The author does not exist in the database, create an entry.
+        if not result:
+            result = Author(author=a)
+            doc.authors.append(result)
     return doc
 
 
@@ -142,18 +147,9 @@ def db_subscribe(Session, mail):
                 # If the document simply did not exist, then create a
                 # document and add it.
                 if not doc:
-                    doc = make_doc(doctype, docdata)
+                    doc = make_doc(session, doctype, docdata)
                     if not doc:
                         continue
-                    for a in docdata["authors"]:
-                        result = (
-                            session.query(Author)
-                            .where(Author.author == a)
-                            .one_or_none()
-                        )
-                        if not result:
-                            result = Author(author=a)
-                        doc.authors.append(result)
                     session.add(doc)
             if not any(sender_addr == user.email for user in doc.cgusers):
                 doc.cgusers.append(user)
