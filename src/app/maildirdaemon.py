@@ -143,16 +143,18 @@ def db_subscribe(Session, mail):
                 # document and add it.
                 if not doc:
                     doc = make_doc(doctype, docdata)
-                if not doc:
-                    continue
-                for a in docdata["authors"]:
-                    result = (
-                        session.query(Author).where(Author.author == a).one_or_none()
-                    )
-                    if not result:
-                        result = Author(author=a)
-                    doc.authors.append(result)
-                session.add(doc)
+                    if not doc:
+                        continue
+                    for a in docdata["authors"]:
+                        result = (
+                            session.query(Author)
+                            .where(Author.author == a)
+                            .one_or_none()
+                        )
+                        if not result:
+                            result = Author(author=a)
+                        doc.authors.append(result)
+                    session.add(doc)
             if not any(sender_addr == user.email for user in doc.cgusers):
                 doc.cgusers.append(user)
         session.commit()
