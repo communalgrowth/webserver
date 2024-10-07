@@ -207,6 +207,7 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
         This is the main functionality of the maildirdaemon.
         """
         account = self.parse_account_from_mail(path)
+        path = pathlib.Path(path)
         match account:
             case "subscribe":
                 try:
