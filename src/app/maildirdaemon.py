@@ -129,7 +129,7 @@ def db_subscribe(Session, mail):
         for doctype, docid in docids:
             doc = db_select_doc(session, doctype, docid)
             if not doc:
-                # We need to lookup the document online because it
+                # We need to lookup the document online because docid
                 # does not have an entry in the database.
                 docdata = lookup_doc(doctype, docid)
                 if not docdata:
@@ -138,8 +138,27 @@ def db_subscribe(Session, mail):
                     # a table in the database along with a timestamp
                     # to avoid performing the same mistake too often.
                     continue
-                doc = make_doc(doctype, docdata)
-                session.add(doc)
+                if doctype == IDType.ISBN10:
+                    # The subscriber requested an ISBN10 document;
+                    # first check that there is no corresponding
+                    # ISBN13 already in the database.
+                    doc13 = db_select_doc(session, doctype, docdata["isbn13"])
+                    if doc13:
+                        doc = doc13
+                        doc13.isbn13 = Isbn10(isbn10=docdata["isbn10"])
+                elif doctype == IDType.ISBN13:
+                    # The subscriber requested an ISBN13 document;
+                    # first check that there is no corresponding
+                    # ISBN10 already in the database.
+                    doc10 = db_select_doc(session, doctype, docdata["isbn10"])
+                    if doc10:
+                        doc = doc10
+                        doc10.isbn13 = Isbn13(isbn13=docdata["isbn13"])
+                # If the document simply did not exist, then create a
+                # document and add it.
+                if not doc:
+                    doc = make_doc(doctype, docdata)
+                    session.add(doc)
             if not any(sender_addr == user.email for user in doc.cgusers):
                 doc.cgusers.append(user)
         session.commit()
