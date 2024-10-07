@@ -195,11 +195,18 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
 
     def on_moved(self, event):
         """Callback when email arrives in Maildir"""
-        path = pathlib.Path(event.dest_path)
-        account = path.parents[-2].stem
-        delivered = path.parents[-3].stem
-        if delivered != "new":
-            return
+        self.process_mail(event.dest_path)
+
+    def on_closed(self, event):
+        """Callback when email arrives in Maildir"""
+        self.process_mail(event.dest_path)
+
+    def process_mail(self, path):
+        """Process received email
+
+        This is the main functionality of the maildirdaemon.
+        """
+        account = self.parse_account_from_mail(path)
         match account:
             case "subscribe":
                 try:
@@ -219,6 +226,23 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
                 except:
                     pass
                 path.unlink()
+
+    def parse_account_from_mail(self, dest_path):
+        """Skip e-mail not in correct Maildir with correct account
+
+        Return None or the account string, i.e. one of:
+        - "subscribe"
+        - "unsubscribe"
+        - "forget"
+        """
+        path = pathlib.Path(dest_path)
+        account = path.parents[-2].stem
+        delivered = path.parents[-3].stem
+        if delivered != "new":
+            return None
+        if account not in ["subscribe", "unsubscribe", "forget"]:
+            return None
+        return account
 
     def call_with_mail(self, procedure, path):
         """Call procedure with self.Session and an EmailMessage from path
