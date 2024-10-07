@@ -129,33 +129,30 @@ def db_subscribe(Session, mail):
                     # The subscriber requested an ISBN10 document;
                     # first check that there is no corresponding
                     # ISBN13 already in the database.
-                    doc13 = db_select_doc(session, IDType.ISBN13, docdata["isbn13"])
-                    if doc13:
-                        doc = doc13
-                        doc13.isbn13 = Isbn10(isbn10=docdata["isbn10"])
+                    doc = db_select_doc(session, IDType.ISBN13, docdata["isbn13"])
+                    if doc:
+                        doc.isbn10 = Isbn10(isbn10=docdata["isbn10"])
                 elif doctype == IDType.ISBN13:
                     # The subscriber requested an ISBN13 document;
                     # first check that there is no corresponding
                     # ISBN10 already in the database.
-                    doc10 = db_select_doc(session, IDType.ISBN10, docdata["isbn10"])
-                    if doc10:
-                        doc = doc10
-                        doc10.isbn13 = Isbn13(isbn13=docdata["isbn13"])
+                    doc = db_select_doc(session, IDType.ISBN10, docdata["isbn10"])
+                    if doc:
+                        doc.isbn13 = Isbn13(isbn13=docdata["isbn13"])
                 # If the document simply did not exist, then create a
                 # document and add it.
                 if not doc:
                     doc = make_doc(doctype, docdata)
-                    if doc:
-                        for a in docdata["authors"]:
-                            result = (
-                                session.query(Author)
-                                .where(Author.author == a)
-                                .one_or_none()
-                            )
-                            if not result:
-                                result = Author(author=a)
-                            doc.authors.append(result)
-                        session.add(doc)
+                if not doc:
+                    continue
+                for a in docdata["authors"]:
+                    result = (
+                        session.query(Author).where(Author.author == a).one_or_none()
+                    )
+                    if not result:
+                        result = Author(author=a)
+                    doc.authors.append(result)
+                session.add(doc)
             if not any(sender_addr == user.email for user in doc.cgusers):
                 doc.cgusers.append(user)
         session.commit()
