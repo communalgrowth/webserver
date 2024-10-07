@@ -42,6 +42,8 @@ def normalize_human_name(name):
 # ISBN-13: 9780140328721
 def lookup_isbn(isbn):
     """Lookup an ISBN-10 or ISBN-13 from openlibrary.org"""
+    isbn10_default = isbn if len(isbn) == 10 else None
+    isbn13_default = isbn if len(isbn) == 13 else None
     isbn_url = f"https://openlibrary.org/isbn/{isbn}.json"
     authors_url = f"https://openlibrary.org/search.json?isbn={isbn}&fields=author_name"
     response = requests.get(isbn_url, headers=headers)
@@ -56,8 +58,8 @@ def lookup_isbn(isbn):
         subtitle = data.get("subtitle", "")
         publish_date = data.get("publish_date", "1984-01-01")
         date = dateparser.parse(publish_date).strftime("%Y-%m-%dT%H:%M:%SZ")
-        isbn_10 = data.get("isbn_10", [None])[0]
-        isbn_13 = data.get("isbn_13", [None])[0]
+        isbn_10 = data.get("isbn_10", [isbn10_default])[0]
+        isbn_13 = data.get("isbn_13", [isbn13_default])[0]
         data2 = response2.json()
         authors = [
             normalize_human_name(x)
