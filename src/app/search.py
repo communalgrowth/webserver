@@ -10,7 +10,7 @@ async def search_documents(Session, search_term, limit=100):
     Session must be created by async_sessionmaker()."""
     stripped = strip_to_alphanum(search_term)
     async with Session() as session:
-        results = (
+        results = await (
             session.query(Document)
             .filter(Document.tsv_title.match(stripped))
             .limit(limit)
