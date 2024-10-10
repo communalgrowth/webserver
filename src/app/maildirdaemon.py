@@ -267,7 +267,7 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
         """
         with open(path, "rb") as f:
             mail = email.message_from_binary_file(f, policy=email.policy.EmailPolicy())
-            return procedure(self.Session, mail)
+        return procedure(self.Session, mail)
 
 
 def maildirdaemon():
