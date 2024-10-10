@@ -60,12 +60,12 @@ class MyController(Controller):
 
     @get("/search", cache_control=CacheControlHeader(no_store=True))
     async def search(self, state: State, s: str = "") -> Template:
-        Session = async_sessionmaker(bind=state.engine, expire_on_commit=False)
         d = dict(
             search_value=s,
             results=[],
         )
         if s:
+            Session = async_sessionmaker(bind=state.engine)
             results = await search_documents(Session, s)
             d["results"] = results
         ctx = global_ctx | d
