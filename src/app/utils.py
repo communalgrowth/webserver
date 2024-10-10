@@ -21,6 +21,6 @@ def parse_pgpass(path):
     <https://github.com/nginx/unit/issues/1455> is fixed.
     """
     with open(path, "r") as f:
-        line = f.readline()
+        line = f.readline().rstrip()
     host, port, db, user, password = line.split(":")
     return f"postgresql+psycopg://{user}:{password}@{host}:{port}/{db}"
