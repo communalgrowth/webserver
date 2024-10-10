@@ -52,7 +52,7 @@ def make_doc(session, doctype, docdata):
         # The author does not exist in the database, create an entry.
         if not result:
             result = Author(author=a)
-            doc.authors.append(result)
+        doc.authors.append(result)
     return doc
 
 
