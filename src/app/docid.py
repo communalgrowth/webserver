@@ -19,6 +19,11 @@ headers = {
 }
 
 
+def get_url(url):
+    """Simple wrapper over requests.get() with header and timeout"""
+    return requests.get(url, headers=headers, timeout=5)
+
+
 def ok_response(response):
     """Check if response succeeded with HTTP 200 code"""
     return response.status_code == requests.codes["ok"]
@@ -46,10 +51,10 @@ def lookup_isbn(isbn):
     isbn13_default = isbn if len(isbn) == 13 else None
     isbn_url = f"https://openlibrary.org/isbn/{isbn}.json"
     authors_url = f"https://openlibrary.org/search.json?isbn={isbn}&fields=author_name"
-    response = requests.get(isbn_url, headers=headers)
+    response = get_url(isbn_url)
     if not ok_response(response):
         return {}
-    response2 = requests.get(authors_url, headers=headers)
+    response2 = get_url(authors_url)
     if not ok_response(response2):
         return {}
     try:
@@ -81,7 +86,7 @@ def lookup_isbn(isbn):
 # DOI: 10.1038/248030a0
 def lookup_doi(doi):
     doi_url = f"https://api.crossref.org/works/{doi}"
-    response = requests.get(doi_url, headers=headers)
+    response = get_url(doi_url)
     if not ok_response(response):
         return {}
     try:
@@ -111,7 +116,7 @@ def lookup_arxiv(arxiv):
         arxiv="http://arxiv.org/schemas/atom",
     )
     arxiv_url = f"http://export.arxiv.org/api/query?id_list={arxiv}"
-    response = requests.get(arxiv_url, headers=headers)
+    response = get_url(arxiv_url)
     if not ok_response(response):
         return {}
     try:
