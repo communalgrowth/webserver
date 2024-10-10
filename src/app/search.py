@@ -12,4 +12,6 @@ async def search_documents(Session, search_term, limit=100):
     stmt = select(Document).filter(Document.tsv_title.match(stripped)).limit(limit)
     async with Session() as session:
         results = await session.execute(stmt)
-    return [(doc.title, ", ".join([a.author for a in doc.authors])) for doc in results]
+    return [
+        (doc.title, ", ".join([a.author for a in doc.authors])) for (doc,) in results
+    ]
