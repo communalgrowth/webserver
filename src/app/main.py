@@ -1,3 +1,4 @@
+import os
 from importlib.resources import files, as_file
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
@@ -15,8 +16,8 @@ from litestar.template.config import TemplateConfig
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from app.conf import DB_URL
 from app.search import search_documents
+from app.utils import parse_pgpass
 
 global_ctx = {"website_name": "Communal Growth"}
 
@@ -59,12 +60,13 @@ class MyController(Controller):
 
     @get("/search", cache_control=CacheControlHeader(no_store=True))
     async def search(self, state: State, s: str = "") -> Template:
+        Session = async_sessionmaker(bind=state.engine, expire_on_commit=False)
         d = dict(
             search_value=s,
             results=[],
         )
         if s:
-            results = await search_documents(state.Session, s)
+            results = await search_documents(Session, s)
             d["results"] = results
         ctx = global_ctx | d
         return Template(template_name="search.html.jinja2", context=ctx)
@@ -82,10 +84,12 @@ class MyController(Controller):
 async def db_connection(app: Litestar) -> AsyncGenerator[None, None]:
     engine = getattr(app.state, "engine", None)
     if engine is None:
-        engine = create_async_engine(DB_URL)
+        # TODO normally I should be using conf.DB_URL but there is a
+        # bug preventing me from doing so; see the documentation of
+        # parse_pgpass.
+        db_url = parse_pgpass(os.environ["PGPASSFILE"])
+        engine = create_async_engine(db_url)
         setattr(app.state, "engine", engine)
-        Session = async_sessionmaker(bind=engine, expire_on_commit=False)
-        setattr(app.state, "Session", Session)
     try:
         yield
     finally:

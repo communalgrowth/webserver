@@ -9,11 +9,7 @@ async def search_documents(Session, search_term, limit=100):
     Limits results up to 'limit' rows.
     Session must be created by async_sessionmaker()."""
     stripped = strip_to_alphanum(search_term)
+    stmt = select(Document).filter(Document.tsv_title.match(stripped)).limit(limit)
     async with Session() as session:
-        results = await (
-            session.query(Document)
-            .filter(Document.tsv_title.match(stripped))
-            .limit(limit)
-            .all()
-        )
+        results = await session.execute(stmt).scalars()
     return [(doc.title, ", ".join([a.author for a in doc.authors])) for doc in results]
