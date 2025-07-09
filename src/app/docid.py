@@ -1,3 +1,12 @@
+"""docid.py
+
+Lookup functions for DOI, ISBN, and arXiv identifiers.
+
+These functions will query online databases if the local database does
+not already have the data. The main lookup function is :func:`lookup_doc`.
+
+"""
+
 import nameparser
 import dateparser
 import requests
@@ -30,6 +39,7 @@ def ok_response(response):
 
 
 def normalize_human_name(name):
+    """Normalize an author name."""
     name = name.strip()
     if " " not in name:
         name = nameparser.HumanName(last=name)

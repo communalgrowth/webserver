@@ -1,3 +1,9 @@
+"""search.py
+
+The module enabling the search functionality on the website.
+
+"""
+
 from sqlalchemy import select, func, text
 from sqlalchemy.orm import selectinload
 from app.cgdb import Document

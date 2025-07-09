@@ -1,3 +1,9 @@
+"""cgdb.py
+
+Provides the ORM class definitions.
+
+"""
+
 from __future__ import annotations
 from typing import List
 

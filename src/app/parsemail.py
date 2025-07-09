@@ -1,3 +1,12 @@
+"""parsemail.py
+
+Parse an e-mail message to its sender address and document
+identifiers.
+
+The main function is :func:`mail_to_docid`.
+
+"""
+
 import email
 import email.utils
 import email.policy

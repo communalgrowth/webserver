@@ -1,3 +1,9 @@
+"""idparser.py
+
+The parser function :func:`idparse` for identifiers found in e-mails.
+
+"""
+
 import lark
 import enum
 
@@ -49,8 +55,9 @@ def idparse(s: str):
     4. arXiv
     5. Title (book or article)
 
-    Returns an (IDType, String) pair, where the string is the
-    normalized version of the identifier.
+    Returns an (IDType, str) pair, where the string is the normalized
+    version of the identifier.
+
     """
     if not hasattr(idparse, "p"):
         setattr(
