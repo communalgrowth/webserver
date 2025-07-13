@@ -4,7 +4,7 @@
 # with openssl at /etc/postfix/{cert,key}-mailserver.pem, and also
 # chown the files to postfix.
 
-USER=tiger
+USER=gauss
 FQDN=communalgrowth.org
 MAILSERVER="mail.${FQDN}"
 

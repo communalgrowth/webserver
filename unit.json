@@ -1,0 +1,46 @@
+{
+  "listeners": {
+    "*:80": {
+      "pass": "routes/acme"
+    },
+    "*:443": {
+      "pass": "applications/litestar",
+      "tls": {
+          "certificate": "bundle"
+      }
+    }
+  },
+  "routes": {
+    "acme": [
+      {
+        "match": {
+          "uri": "/.well-known/acme-challenge/*"
+        },
+        "action": {
+          "share": "/var/www/communalgrowth.org$uri"
+        }
+      },
+      {
+        "action": {
+          "pass": "applications/litestar"
+        }
+      }
+    ]
+  },
+  "applications": {
+    "litestar": {
+      "type": "python 3.11",
+      "home": "/home/gauss/webserver/.venv/",
+      "path": "/home/gauss/webserver/src/app",
+      "module": "main",
+      "callable": "app",
+      "stderr": "/home/gauss/webserver/logs/error.log",
+      "user": "gauss",
+      "processes": 1,
+      "environment": {
+        "PGPASSFILE": "/home/gauss/.pgpass",
+        "CG_IMAP_PWD_FILE": "/home/gauss/.cgimap"
+      }
+    }
+  }
+}

@@ -10,6 +10,7 @@ The main function is :func:`mail_to_docid`.
 import email
 import email.utils
 import email.policy
+from email.message import EmailMessage
 import html.parser
 from app import utils
 from app import idparser
@@ -33,17 +34,18 @@ class MyHTMLParser(html.parser.HTMLParser):
             self.data.append(data)
 
 
-def parse_address(mail):
-    """Retrieve the sender address from an EmailMessage"""
+def parse_address(mail: EmailMessage):
+    """Retrieve the sender address from an e-mail."""
     _, addr = email.utils.parseaddr(mail["From"])
     return addr
 
 
-def parse_mail(mail):
-    """Retrieve the sender address and content body from an EmailMessage
+def parse_mail(mail: EmailMessage):
+    """Retrieve the sender address and content body from an e-mail.
 
     Returns a pair of the sender address and a list of sentences,
     stripped of HTML if present.
+
     """
     # Grab the sender address.
     _, addr = email.utils.parseaddr(mail["From"])
@@ -71,8 +73,8 @@ def parse_mail(mail):
     return addr, body
 
 
-def mail_to_docid(mail):
-    """Retrieve the sender address and document IDs in the body of the EmailMessage"""
+def mail_to_docid(mail: EmailMessage):
+    """Retrieve the sender address and document IDs in the body of the e-mail."""
     addr, body = parse_mail(mail)
     ids = [idparser.idparse(token) for line in body for token in line.split(",")]
     ids = [

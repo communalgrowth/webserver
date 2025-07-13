@@ -1,15 +1,17 @@
+#!/usr/bin/env python3
+
 import click
-import daemon
 import email
 import email.policy
+from email.parser import BytesParser
+import imaplib
+import logging
 import pathlib
-import watchdog
-import watchdog.events
-import watchdog.observers
 import psycopg
 import sqlalchemy
 import sqlalchemy.orm
-import os
+import ssl
+import time
 from app.cgdb import (
     Author,
     Base,
@@ -21,10 +23,27 @@ from app.cgdb import (
     Arxiv,
     cguser_document_association,
 )
-from app.conf import DB_URL, FQDN
+from app.conf import DB_URL, FQDN, CG_IMAP_PWD_FILE
 from app.parsemail import mail_to_docid, parse_address
 from app.idparser import IDType
 from app.docid import lookup_doc
+
+logging.basicConfig(format="maildirdaemon: %(message)s")
+logger = logging.getLogger(__name__)
+
+
+def create_tls_context(ca: str, cert: str, key: str) -> ssl.SSLContext:
+    """Create a TLS context using the root CA and client cert/key.
+
+    The CA is used to verify the IMAP server.
+
+    """
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.check_hostname = False  # We use localhost instead of communalgrowth.org
+    ctx.set_ciphers("DEFAULT@SECLEVEL=2")
+    ctx.load_verify_locations(ca)
+    ctx.load_cert_chain(certfile=cert, keyfile=key)
+    return ctx
 
 
 def make_doc(session, doctype, docdata):
@@ -100,13 +119,14 @@ def db_select_user(session, addr):
 
 
 def db_subscribe(Session, mail):
-    """Subscribe user to document IDs
+    """Subscribe user to document IDs.
 
     mail denotes an EmailMessage sent by the user to the subscribe
     address. It contains in its body a list of document IDs, such as
     ISBN, doi, arXiv IDs. These IDs will be looked up online if they
     are not found in the database, and the user will be subscribed to
     these IDs.
+
     """
     # Parse the sender address and textual body of the e-mail.
     sender_addr, docids = mail_to_docid(mail)
@@ -201,23 +221,16 @@ def db_forget(Session, mail):
         session.commit()
 
 
-class ProcessMaildir(watchdog.events.FileSystemEventHandler):
+class ProcessMaildir:
     def __init__(self, Session):
         super().__init__()
         self.Session = Session
 
-    def on_moved(self, event):
-        """Callback when email arrives in Maildir"""
-        self.process_mail(event.dest_path)
-
-    def on_closed(self, event):
-        """Callback when email arrives in Maildir"""
-        self.process_mail(event.src_path)
-
     def process_mail(self, path):
         """Process received email
 
-        This is the main functionality of the maildirdaemon.
+        This is the main functionality of the Maildir daemon.
+
         """
         account = self.parse_account_from_mail(path)
         path = pathlib.Path(path)
@@ -270,7 +283,8 @@ class ProcessMaildir(watchdog.events.FileSystemEventHandler):
         return procedure(self.Session, mail)
 
 
-def maildirdaemon():
+def maildirdaemon(imap_pwd: bytes):
+    """The entry point to the Maildir processing daemon."""
     # Create the SQLAlchemy engine; the password is specified in
     # the .pgpass file.
     engine = sqlalchemy.create_engine(
@@ -285,35 +299,58 @@ def maildirdaemon():
     Base.metadata.create_all(engine)
     # Create a session factory.
     Session = sqlalchemy.orm.sessionmaker(bind=engine)
-    # Set up the Maildir event handler.
-    event_handler = ProcessMaildir(Session)
-    observer = watchdog.observers.Observer()
-    observer.schedule(event_handler, ".", recursive=True)
-    observer.start()
-    try:
-        while observer.is_alive():
-            observer.join(1)
-    finally:
-        observer.stop()
-        observer.join()
+    # Create a TLS context.
+    ctx = create_tls_context(
+        ca="tls/ca-cert.pem",
+        cert="tls/cg-message-daemon-tls-cert.pem",
+        key="tls/cg-message-daemon-tls-key.pem",
+    )
+    while True:
+        process_emails(ctx, Session, imap_pwd)
+        time.sleep(10)
+
+
+def process_emails(ctx, Session, imap_pwd: bytes, batch_size=10):
+    actions = [
+        ("subscribe", db_subscribe),
+        ("unsubscribe", db_unsubscribe),
+        ("forget", db_forget),
+    ]
+    imap = imaplib.IMAP4_SSL(host="localhost", port=37419, ssl_context=ctx)
+    for user, action in actions:
+        imap.login(f"{user}@communalgrowth.org*vmail", str(imap_pwd))
+        imap.select()
+        status, data = imap.uid("SEARCH", "ALL")
+        email_ids = sorted(data[0].split(), key=int)[:batch_size]
+        for num in email_ids:
+            try:
+                status, data = imap.uid("FETCH", num, "(RFC822)")
+                mail = BytesParser(policy=email.policy.EmailPolicy()).parsebytes(
+                    data[0][1]
+                )
+                action(Session, mail)
+            except:
+                pass
+            # Delete the processed file.
+            imap.uid("STORE", num, "+FLAGS", "\\Deleted")
+            imap.expunge()
+            imap.close()
+        imap.logout()
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.version_option(None, "-v", "--version", package_name="webserver")
-@click.option(
-    "-f", "--foreground", help="Run in the foreground.", is_flag=True, default=False
-)
-def main(foreground):
-    wd = str(pathlib.Path("/var/mail/vhosts") / FQDN)
-    if not foreground:
-        with daemon.DaemonContext(
-            working_directory=wd,
-            detach_process=True,
-        ):
-            maildirdaemon()
-    else:
-        os.chdir(wd)
-        maildirdaemon()
+def main():
+    try:
+        with open(CG_IMAP_PWD_FILE, "rb") as f:
+            imap_pwd = f.read()
+    except FileNotFoundError:
+        logger.error("File not found in CG_IMAP_PWD_FILE.")
+        exit(1)
+    except Exception as e:
+        logger.error(f"{e}")
+        exit(1)
+    maildirdaemon(imap_pwd)
 
 
 if __name__ == "__main__":
