@@ -23,6 +23,12 @@ main aside {
   }
 }
 
+p + ul {
+    list-style-position: inside;
+    text-align: left;
+    padding-left: 1em;
+}
+
 nav ul {
     display: flex;
     flex: 2;
