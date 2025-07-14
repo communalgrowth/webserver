@@ -32,12 +32,18 @@ p + ul {
 nav ul {
     display: flex;
     flex: 2;
-    list-style-type: none;
+    flex-wrap: wrap;
+    list-style: none;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0;
 }
 
 nav li {
     text-align: center;
     flex: 1;
+    padding: 0.5rem 1rem;
+    flex-shrink: 0;
 }
 
 pre.subscribe-example {
