@@ -65,6 +65,7 @@ a.menu-button:link, a.menu-button:visited {
     font-weight: bold;
     border: 1px solid #c96f2a;
     border-radius: 20px;
+    min-width: 9ch;             /* 9 characters; as long as the word "subscribe". */
     color: black;
     padding: 14px 25px;
     text-align: center;
