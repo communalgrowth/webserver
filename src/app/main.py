@@ -71,9 +71,9 @@ class MyController(Controller):
         ctx = global_ctx | d
         return Template(template_name="search.html.jinja2", context=ctx)
 
-    @get("/submit")
-    async def submit(self) -> Template:
-        return Template(template_name="submit.html.jinja2", context=global_ctx)
+    @get("/subscribe")
+    async def subscribe(self) -> Template:
+        return Template(template_name="subscribe.html.jinja2", context=global_ctx)
 
     @get("/contact")
     async def contact(self) -> Template:
