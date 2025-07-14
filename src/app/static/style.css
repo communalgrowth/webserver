@@ -17,6 +17,12 @@ main aside {
     border-left: 10px double #FF6550;
 }
 
+@media (max-width: 768px) {
+  main aside {
+    display: none;
+  }
+}
+
 nav ul {
     display: flex;
     flex: 2;

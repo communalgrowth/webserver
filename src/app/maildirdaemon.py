@@ -316,26 +316,27 @@ def process_emails(ctx, Session, imap_pwd: bytes, batch_size=10):
         ("unsubscribe", db_unsubscribe),
         ("forget", db_forget),
     ]
-    imap = imaplib.IMAP4_SSL(host="localhost", port=37419, ssl_context=ctx)
     for user, action in actions:
-        imap.login(f"{user}@communalgrowth.org*vmail", str(imap_pwd, encoding="utf-8"))
-        imap.select()
-        status, data = imap.uid("SEARCH", "ALL")
-        email_ids = sorted(data[0].split(), key=int)[:batch_size]
-        for num in email_ids:
-            try:
-                status, data = imap.uid("FETCH", num, "(RFC822)")
-                mail = BytesParser(policy=email.policy.EmailPolicy()).parsebytes(
-                    data[0][1]
-                )
-                action(Session, mail)
-            except:
-                pass
-            # Delete the processed file.
-            imap.uid("STORE", num, "+FLAGS", "\\Deleted")
-            imap.expunge()
+        with imaplib.IMAP4_SSL(host="localhost", port=37419, ssl_context=ctx) as imap:
+            imap.login(
+                f"{user}@communalgrowth.org*vmail", str(imap_pwd, encoding="utf-8")
+            )
+            imap.select()
+            status, data = imap.uid("SEARCH", "ALL")
+            email_ids = sorted(data[0].split(), key=int)[:batch_size]
+            for num in email_ids:
+                try:
+                    status, data = imap.uid("FETCH", num, "(RFC822)")
+                    mail = BytesParser(policy=email.policy.EmailPolicy()).parsebytes(
+                        data[0][1]
+                    )
+                    action(Session, mail)
+                except:
+                    pass
+                # Delete the processed file.
+                imap.uid("STORE", num, "+FLAGS", "\\Deleted")
+                imap.expunge()
             imap.close()
-        imap.logout()
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
