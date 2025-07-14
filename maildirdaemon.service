@@ -1,0 +1,17 @@
+[Unit]
+Description=Maildirdaemon Python Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/gauss/webserver/.venv/bin/python3 -u /home/gauss/webserver/src/app/maildirdaemon.py
+Restart=always
+User=gauss
+Group=gauss
+StandardOutput=journal
+StandardError=journal
+Environment=CG_IMAP_PWD_FILE=/home/gauss/.cgimap
+Environment=CG_TLS_DIR=/home/gauss/tls
+
+[Install]
+WantedBy=multi-user.target

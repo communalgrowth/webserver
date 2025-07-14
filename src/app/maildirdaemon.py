@@ -23,7 +23,7 @@ from app.cgdb import (
     Arxiv,
     cguser_document_association,
 )
-from app.conf import DB_URL, FQDN, CG_IMAP_PWD_FILE
+from app.conf import DB_URL, FQDN, CG_IMAP_PWD_FILE, CG_TLS_DIR
 from app.parsemail import mail_to_docid, parse_address
 from app.idparser import IDType
 from app.docid import lookup_doc
@@ -301,9 +301,9 @@ def maildirdaemon(imap_pwd: bytes):
     Session = sqlalchemy.orm.sessionmaker(bind=engine)
     # Create a TLS context.
     ctx = create_tls_context(
-        ca="tls/ca-cert.pem",
-        cert="tls/cg-message-daemon-tls-cert.pem",
-        key="tls/cg-message-daemon-tls-key.pem",
+        ca=f"{CG_TLS_DIR}/ca-cert.pem",
+        cert=f"{CG_TLS_DIR}/cg-message-daemon-tls-cert.pem",
+        key=f"{CG_TLS_DIR}/cg-message-daemon-tls-key.pem",
     )
     while True:
         process_emails(ctx, Session, imap_pwd)
@@ -318,7 +318,7 @@ def process_emails(ctx, Session, imap_pwd: bytes, batch_size=10):
     ]
     imap = imaplib.IMAP4_SSL(host="localhost", port=37419, ssl_context=ctx)
     for user, action in actions:
-        imap.login(f"{user}@communalgrowth.org*vmail", str(imap_pwd))
+        imap.login(f"{user}@communalgrowth.org*vmail", str(imap_pwd, encoding="utf-8"))
         imap.select()
         status, data = imap.uid("SEARCH", "ALL")
         email_ids = sorted(data[0].split(), key=int)[:batch_size]
