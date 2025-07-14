@@ -10,6 +10,9 @@
   </form>
 </div>
 {% if results %}
+{% if search_value == '' %}
+<p>{{ results | length }} most recent documents:</p>
+{% endif %}
 <table>
   <tr>
     <th>Title</th>

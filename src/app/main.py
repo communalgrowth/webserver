@@ -16,7 +16,7 @@ from litestar.template.config import TemplateConfig
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
-from app.search import search_documents
+from app.search import search_documents, search_recent
 from app.utils import parse_pgpass
 
 global_ctx = {"website_name": "Communal Growth"}
@@ -67,6 +67,10 @@ class MyController(Controller):
         if s:
             Session = async_sessionmaker(bind=state.engine)
             results = await search_documents(Session, s)
+            d["results"] = results
+        else:
+            Session = async_sessionmaker(bind=state.engine)
+            results = await search_recent(Session)
             d["results"] = results
         ctx = global_ctx | d
         return Template(template_name="search.html.jinja2", context=ctx)
