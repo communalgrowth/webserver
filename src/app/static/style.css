@@ -100,6 +100,11 @@ input[type=text] {
     background: #ccc;
 }
 
+.banner-link {
+  text-decoration: none;
+  color: inherit;
+}
+
 /* Styling the search results table. */
 
 table {
