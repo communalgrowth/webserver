@@ -33,6 +33,11 @@ p#search-results {
     text-align: left;
 }
 
+p.news-entry {
+    text-align: left;
+    padding-left: 2em;
+}
+
 nav ul {
     display: flex;
     flex: 2;
