@@ -14,7 +14,7 @@
 <p id="search-results">{{ results | length }} most recent documents:</p>
 {% endif %}
 <table>
-  <tr>
+  <tr class="hide-on-narrow">
     <th>Title</th>
     <th>ID</th>
     <th>Author(s)</th>
@@ -22,10 +22,10 @@
   </tr>
   {% for result in results %}
   <tr>
-    <td><cite>{{ result[0] }}</cite></td>
-    <td>{{ result[1] }}</td>
-    <td>{{ result[2] }}</td>
-    <td>{{ result[3] }}</td>
+    <td data-label="Title"><cite>{{ result[0] }}</cite></td>
+    <td data-label="ID">{{ result[1] }}</td>
+    <td data-label="Author(s)">{{ result[2] }}</td>
+    <td data-label="Subscribers">{{ result[3] }}</td>
   </tr>
   {% endfor %}
 </table>
