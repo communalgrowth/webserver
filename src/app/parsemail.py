@@ -12,8 +12,10 @@ import email.utils
 import email.policy
 from email.message import EmailMessage
 import html.parser
+from itertools import islice
 from app import utils
 from app import idparser
+from app.conf import RATELIMIT_DOCIDS
 
 
 class MyHTMLParser(html.parser.HTMLParser):
@@ -76,7 +78,19 @@ def parse_mail(mail: EmailMessage):
 def mail_to_docid(mail: EmailMessage):
     """Retrieve the sender address and document IDs in the body of the e-mail."""
     addr, body = parse_mail(mail)
-    ids = [idparser.idparse(token) for line in body for token in line.split(",")]
+    # We only split a certain amount of lines; and then we only split
+    # a certain amount of comma-separated document IDs from
+    # each. Finally, we use islice() to only read a certain amount of
+    # items. This prevents users from putting too many \n characters
+    # or , characters in their e-mails and slowing down parsing.
+    ids = islice(
+        (
+            idparser.idparse(token)
+            for line in body[:RATELIMIT_DOCIDS]
+            for token in line.split(",", maxsplit=RATELIMIT_DOCIDS)[:RATELIMIT_DOCIDS]
+        ),
+        RATELIMIT_DOCIDS,
+    )
     ids = [
         (doctype, docid) for (doctype, docid) in ids if doctype != idparser.IDType.TITLE
     ]
