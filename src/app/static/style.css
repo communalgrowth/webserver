@@ -29,6 +29,10 @@ p + ul {
     padding-left: 1em;
 }
 
+p#search-results {
+    text-align: left;
+}
+
 nav ul {
     display: flex;
     flex: 2;
