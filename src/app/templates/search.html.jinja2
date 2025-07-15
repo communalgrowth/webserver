@@ -23,7 +23,7 @@
   {% for result in results %}
   <tr>
     <td data-label="Title"><cite>{{ result[0] }}</cite></td>
-    <td data-label="ID">{{ result[1] }}</td>
+    <td data-label="ID"><a href="mailto:subscribe@communalgrowth.org?subject=Subscribe&body={{ result[1] }}">{{ result[1] }}</a></td>
     <td data-label="Author(s)">{{ result[2] }}</td>
     <td data-label="Subscribers">{{ result[3] }}</td>
   </tr>
