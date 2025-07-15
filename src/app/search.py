@@ -38,11 +38,14 @@ async def search_documents(Session, search_term, limit=100):
 
 
 async def search_recent(Session, limit=10):
-    """Search database for the most recent documents."""
+    """Search database for the most recent documents.
+
+    Skips the books with no subscribers."""
     stmt = (
         select(Document)
         .options(selectinload(Document.authors))
         .options(selectinload(Document.cgusers))
+        .filter(Document.cgusers.any())
         .order_by(desc(Document.id))
         .limit(limit)
     )
