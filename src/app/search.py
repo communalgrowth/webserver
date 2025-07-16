@@ -4,9 +4,9 @@ The module enabling the search functionality on the website.
 
 """
 
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, func
 from sqlalchemy.orm import selectinload
-from app.cgdb import Document
+from app.cgdb import Document, CGUser, cguser_document_association
 from app.utils import strip_to_alphanum
 
 
@@ -26,17 +26,17 @@ def doc_stringify_id(doc):
         return ""
 
 
-def doc_to_result(doc):
+def doc_to_result(doc, cgusers):
     """Convert a document to a search result."""
     return (
         doc.title,
         doc_stringify_id(doc),
-        ", ".join([a.author for a in doc.authors]),
-        ", ".join([u.email for u in doc.cgusers]),
+        ", ".join(a.author for a in doc.authors),
+        ", ".join(u.email for u in cgusers),
     )
 
 
-async def search_documents(Session, search_term, limit=100):
+async def search_documents(Session, search_term, limit=100, email_limit=10):
     """Search database documents (title and author last names)
 
     Limits results up to 'limit' rows.
@@ -46,7 +46,6 @@ async def search_documents(Session, search_term, limit=100):
         select(Document)
         .options(
             selectinload(Document.authors),
-            selectinload(Document.cgusers),
             selectinload(Document.isbn10),
             selectinload(Document.isbn13),
             selectinload(Document.doi),
@@ -55,12 +54,28 @@ async def search_documents(Session, search_term, limit=100):
         .filter(Document.tsv_title.match(stripped))
         .limit(limit)
     )
+    # TODO: The many-to-many relationship should be possible to use to
+    # write a single query that obtains all the results at once. Below
+    # I'm using 11 queries. This can be done using "window" functions.
+    acc_doc_cgusers = []
     async with Session() as session:
         results = await session.execute(stmt)
-    return [doc_to_result(doc) for doc in results.scalars().all()]
+        for doc in results.scalars().all():
+            cgusers = await session.execute(
+                select(CGUser)
+                .join(
+                    cguser_document_association,
+                    CGUser.email == cguser_document_association.c.email,
+                )
+                .where(cguser_document_association.c.doc_id == doc.id)
+                .order_by(func.random())
+                .limit(email_limit)
+            )
+            acc_doc_cgusers.append((doc, cgusers.scalars().all()))
+    return [doc_to_result(doc, cgusers) for doc, cgusers in acc_doc_cgusers]
 
 
-async def search_recent(Session, limit=10):
+async def search_recent(Session, limit=10, email_limit=10):
     """Search database for the most recent documents.
 
     Skips the books with no subscribers."""
@@ -68,7 +83,6 @@ async def search_recent(Session, limit=10):
         select(Document)
         .options(
             selectinload(Document.authors),
-            selectinload(Document.cgusers),
             selectinload(Document.isbn10),
             selectinload(Document.isbn13),
             selectinload(Document.doi),
@@ -78,6 +92,19 @@ async def search_recent(Session, limit=10):
         .order_by(desc(Document.id))
         .limit(limit)
     )
+    acc_doc_cgusers = []
     async with Session() as session:
         results = await session.execute(stmt)
-    return [doc_to_result(doc) for doc in results.scalars().all()]
+        for doc in results.scalars().all():
+            cgusers = await session.execute(
+                select(CGUser)
+                .join(
+                    cguser_document_association,
+                    CGUser.email == cguser_document_association.c.email,
+                )
+                .where(cguser_document_association.c.doc_id == doc.id)
+                .order_by(func.random())
+                .limit(email_limit)
+            )
+            acc_doc_cgusers.append((doc, cgusers.scalars().all()))
+    return [doc_to_result(doc, cgusers) for doc, cgusers in acc_doc_cgusers]
