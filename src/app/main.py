@@ -13,6 +13,7 @@ from litestar.response import Template
 from litestar.static_files import create_static_files_router
 from litestar.status_codes import HTTP_404_NOT_FOUND, HTTP_500_INTERNAL_SERVER_ERROR
 from litestar.template.config import TemplateConfig
+from litestar.params import Parameter
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
@@ -59,7 +60,9 @@ class MyController(Controller):
         return Template(template_name="howto.html.jinja2", context=global_ctx)
 
     @get("/search", cache_control=CacheControlHeader(no_store=True))
-    async def search(self, state: State, s: str = "") -> Template:
+    async def search(
+        self, state: State, s: str = Parameter(default="", max_length=300)
+    ) -> Template:
         d = dict(
             search_value=s,
             results=[],
