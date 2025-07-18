@@ -4,6 +4,8 @@ The module enabling the search functionality on the website.
 
 """
 
+from collections import defaultdict
+
 from sqlalchemy import select, desc, func
 from sqlalchemy.orm import selectinload
 from app.cgdb import Document, CGUser, cguser_document_association
@@ -42,8 +44,30 @@ async def search_documents(Session, search_term, limit=100, email_limit=10):
     Limits results up to 'limit' rows.
     Session must be created by async_sessionmaker()."""
     stripped = strip_to_alphanum(search_term)
+    # fmt: off
+    top_docs_subq = (
+        select(Document.id)
+        .order_by(desc(Document.id))
+        .limit(limit)
+        .subquery()
+    )
+    row_number = (
+        func.row_number().over(
+            partition_by=cguser_document_association.c.doc_id,
+            order_by=func.random()
+        ).label("rn")
+    )
+    subq = (
+        select(
+            cguser_document_association.c.doc_id,
+            cguser_document_association.c.email,
+            row_number,
+        )
+        .where(cguser_document_association.c.doc_id.in_(select(top_docs_subq.c.id)))
+        .subquery()
+    )
     stmt = (
-        select(Document)
+        select(Document, CGUser)
         .options(
             selectinload(Document.authors),
             selectinload(Document.isbn10),
@@ -52,35 +76,54 @@ async def search_documents(Session, search_term, limit=100, email_limit=10):
             selectinload(Document.arxiv),
         )
         .filter(Document.tsv_title.match(stripped))
-        .limit(limit)
+        .select_from(
+            subq
+            .join(Document, Document.id == subq.c.doc_id)
+            .join(CGUser, CGUser.email == subq.c.email)
+        )
+        .where(subq.c.rn <= email_limit)
+        .order_by(desc(subq.c.doc_id))
     )
-    # TODO: The many-to-many relationship should be possible to use to
-    # write a single query that obtains all the results at once. Below
-    # I'm using 11 queries. This can be done using "window" functions.
-    acc_doc_cgusers = []
+    # fmt: on
     async with Session() as session:
-        results = await session.execute(stmt)
-        for doc in results.scalars().all():
-            cgusers = await session.execute(
-                select(CGUser)
-                .join(
-                    cguser_document_association,
-                    CGUser.email == cguser_document_association.c.email,
-                )
-                .where(cguser_document_association.c.doc_id == doc.id)
-                .order_by(func.random())
-                .limit(email_limit)
-            )
-            acc_doc_cgusers.append((doc, cgusers.scalars().all()))
-    return [doc_to_result(doc, cgusers) for doc, cgusers in acc_doc_cgusers]
+        result = await session.execute(stmt)
+    d = defaultdict(list)
+    for doc, cguser in result.all():
+        d[doc].append(cguser)
+    return [doc_to_result(doc, d[doc]) for doc in d.keys()]
 
 
 async def search_recent(Session, limit=10, email_limit=10):
     """Search database for the most recent documents.
 
-    Skips the books with no subscribers."""
+    Skips the books with no subscribers. Displays `limit` documents
+    with `email_limit` emails.
+
+    """
+    # fmt: off
+    top_docs_subq = (
+        select(Document.id)
+        .order_by(desc(Document.id))
+        .limit(limit)
+        .subquery()
+    )
+    row_number = (
+        func.row_number().over(
+            partition_by=cguser_document_association.c.doc_id,
+            order_by=func.random()
+        ).label("rn")
+    )
+    subq = (
+        select(
+            cguser_document_association.c.doc_id,
+            cguser_document_association.c.email,
+            row_number,
+        )
+        .where(cguser_document_association.c.doc_id.in_(select(top_docs_subq.c.id)))
+        .subquery()
+    )
     stmt = (
-        select(Document)
+        select(Document, CGUser)
         .options(
             selectinload(Document.authors),
             selectinload(Document.isbn10),
@@ -88,23 +131,18 @@ async def search_recent(Session, limit=10, email_limit=10):
             selectinload(Document.doi),
             selectinload(Document.arxiv),
         )
-        .filter(Document.cgusers.any())
-        .order_by(desc(Document.id))
-        .limit(limit)
+        .select_from(
+            subq
+            .join(Document, Document.id == subq.c.doc_id)
+            .join(CGUser, CGUser.email == subq.c.email)
+        )
+        .where(subq.c.rn <= email_limit)
+        .order_by(desc(subq.c.doc_id))
     )
-    acc_doc_cgusers = []
+    # fmt: on
     async with Session() as session:
-        results = await session.execute(stmt)
-        for doc in results.scalars().all():
-            cgusers = await session.execute(
-                select(CGUser)
-                .join(
-                    cguser_document_association,
-                    CGUser.email == cguser_document_association.c.email,
-                )
-                .where(cguser_document_association.c.doc_id == doc.id)
-                .order_by(func.random())
-                .limit(email_limit)
-            )
-            acc_doc_cgusers.append((doc, cgusers.scalars().all()))
-    return [doc_to_result(doc, cgusers) for doc, cgusers in acc_doc_cgusers]
+        result = await session.execute(stmt)
+    d = defaultdict(list)
+    for doc, cguser in result.all():
+        d[doc].append(cguser)
+    return [doc_to_result(doc, d[doc]) for doc in d.keys()]
