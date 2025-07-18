@@ -9,7 +9,7 @@ main {
 
 main article {
     flex: 3;
-    padding-right: 20px;
+    padding-right: 10px;
 }
 
 main aside {
@@ -149,31 +149,27 @@ tr:hover {
 }
 
 @media (max-width: 600px) {
-  table, td, tr {
-      display: block;
-  }
-
-  tr {
-    margin-bottom: 15px;
-  }
-
-  td {
-    text-align: right;
-    padding-left: 20%;
-    position: relative;
-  }
-
-  td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 5px;
-    width: 15%;
-    padding-left: 10px;
-    font-weight: bold;
-    text-align: left;
-  }
-
-  .hide-on-narrow {
-        display: none;
-  }
+    table, td, tr {
+        display: block;
+    }
+    tr {
+        margin-bottom: 15px;
+    }
+    td {
+        text-align: right;
+        padding-left: 20%;
+        position: relative;
+    }
+    td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 5px;
+        width: 15%;
+        padding-left: 10px;
+        font-weight: bold;
+        text-align: left;
+    }
+    .hide-on-narrow {
+        visibility: hidden;
+    }
 }
