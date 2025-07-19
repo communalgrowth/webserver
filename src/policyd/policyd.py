@@ -62,6 +62,19 @@ def canonicalize_email(email: bytes) -> bytes:
     return b"%b@%b" % (local, domain)
 
 
+def sender_key(email: bytes) -> bytes:
+    """Obtain the Redis key corresponding to email."""
+    email = canonicalize_email(email)
+    _, domain = email.split(b"@", 1)
+    if domain in email_providers:
+        key = b"PostfixPolicyQuota-%b" % email
+    elif domain.endswith(b".edu"):
+        key = b"PostfixPolicyQuota-%b" % email
+    else:
+        key = b"PostfixPolicyQuota-%b" % domain
+    return key
+
+
 class PostfixPolicy(ss.BaseRequestHandler):
     def handle(self):
         redis_con = redis.Redis(host="localhost", port=6379, protocol=3)
@@ -87,12 +100,7 @@ class PostfixPolicy(ss.BaseRequestHandler):
         if recipient not in accounts_with_quota:
             self.request.send(b"action=DUNNO\n\n")
             return
-        email = canonicalize_email(request[b"sender"])
-        _, domain = email.split(b"@", 1)
-        if domain in email_providers:
-            key = b"PostfixPolicyQuota-%b" % email
-        else:
-            key = b"PostfixPolicyQuota-%b" % domain
+        key = sender_key(request[b"sender"])
         value = redis_con.get(key)
         if value is None:
             since_time, count = int(time()), 0
