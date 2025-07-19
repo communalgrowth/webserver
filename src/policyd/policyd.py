@@ -45,6 +45,21 @@ email_providers = {
     b"zoho.com",
     b"zohomail.com",
 }
+accounts_with_quota = {
+    b"subscribe@communalgrowth.org",
+    b"unsubscribe@communalgrowth.org",
+}
+
+
+def canonicalize_email(email: bytes) -> bytes:
+    """Lowercase and remove the +."""
+    email = email.lower()
+    local, domain = email.split(b"@", 1)
+    try:
+        local, _ = local.split(b"+", 1)
+    except:
+        pass
+    return b"%b@%b" % (local, domain)
 
 
 class PostfixPolicy(ss.BaseRequestHandler):
@@ -68,7 +83,11 @@ class PostfixPolicy(ss.BaseRequestHandler):
 
     def respond(self, redis_con, request: dict[bytes, bytes]):
         """Handle and respond to the request"""
-        email = request[b"sender"]
+        recipient = canonicalize_email(request[b"recipient"])
+        if recipient not in accounts_with_quota:
+            self.request.send(b"action=DUNNO\n\n")
+            return
+        email = canonicalize_email(request[b"sender"])
         _, domain = email.split(b"@", 1)
         if domain in email_providers:
             key = b"PostfixPolicyQuota-%b" % email
