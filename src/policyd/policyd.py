@@ -78,7 +78,7 @@ class PostfixPolicy(ss.BaseRequestHandler):
         if value is None:
             since_time, count = int(time()), 0
         else:
-            since_time, count = map(int, value.split(","))
+            since_time, count = map(int, value.split(b","))
         count += 1
         cur_time = int(time())
         if cur_time - since_time > limit_period:
