@@ -48,10 +48,8 @@ email_providers = {
 
 
 class PostfixPolicy(ss.BaseRequestHandler):
-    def __init__(self):
-        self.redis_con = redis.Redis(host="localhost", port=6379, protocol=3)
-
     def handle(self):
+        redis_con = redis.Redis(host="localhost", port=6379, protocol=3)
         # We keep a forever loop on the handle.
         #
         # "Unless there was an error, the server must not close the
@@ -66,9 +64,9 @@ class PostfixPolicy(ss.BaseRequestHandler):
                 data += self.request.recv(4096)
             lines = data.split()
             d = dict(line.split(b"=", 1) for line in lines)
-            self.respond(d)
+            self.respond(redis_con, d)
 
-    def respond(self, request: dict[bytes, bytes]):
+    def respond(self, redis_con, request: dict[bytes, bytes]):
         """Handle and respond to the request"""
         email = request[b"sender"]
         _, domain = email.split(b"@", 1)
@@ -76,7 +74,7 @@ class PostfixPolicy(ss.BaseRequestHandler):
             key = b"PostfixPolicyQuota-%b" % email
         else:
             key = b"PostfixPolicyQuota-%b" % domain
-        value = self.redis_con.get(key)
+        value = redis_con.get(key)
         if value is None:
             since_time, count = int(time()), 0
         else:
@@ -84,14 +82,14 @@ class PostfixPolicy(ss.BaseRequestHandler):
         count += 1
         cur_time = int(time())
         if cur_time - since_time > limit_period:
-            self.redis_con.set(key, b"%d,%d" % (cur_time, count))
+            redis_con.set(key, b"%d,%d" % (cur_time, count))
             self.request.send(b"action=DUNNO\n\n")
         elif count > email_limit:
             self.request.send(
                 b"action=DEFER_IF_PERMIT 450 4.2.1 Daily quota exceeded.\n\n"
             )
         else:
-            self.redis_con.set(key, b"%d,%d" % (since_time, count))
+            redis_con.set(key, b"%d,%d" % (since_time, count))
             self.request.send(b"action=DUNNO\n\n")
 
 
