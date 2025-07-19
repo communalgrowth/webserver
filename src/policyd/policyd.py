@@ -3,6 +3,7 @@
 from time import time
 import socketserver as ss
 import redis
+from app.conf import CG_POLICY_PORT
 
 limit_period = 60 * 60 * 24  # in seconds
 email_limit = 100  # per limit period
@@ -95,7 +96,7 @@ class PostfixPolicy(ss.BaseRequestHandler):
 
 
 def main():
-    with ss.TCPServer(("localhost", 12345), PostfixPolicy) as server:
+    with ss.TCPServer(("localhost", int(CG_POLICY_PORT)), PostfixPolicy) as server:
         server.serve_forever()
 
 
