@@ -52,7 +52,8 @@ accounts_with_quota = {
 
 
 def canonicalize_email(email: bytes) -> bytes:
-    """Lowercase and remove the +."""
+    """Lowercase and remove everything after the + recipient
+    delimiter."""
     email = email.lower()
     local, domain = email.split(b"@", 1)
     try:
