@@ -36,7 +36,9 @@ tests = [
     "pytest-xdist",
 ]
 dev = [
-    "black"
+    "black",
+    "jinja-cli >= 1.2.2",
+    "invoke >= 2.2",
 ]
 
 [project.scripts]

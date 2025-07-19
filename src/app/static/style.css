@@ -18,6 +18,9 @@ main aside {
 }
 
 @media (max-width: 768px) {
+  main article {
+      padding-right: 0;
+  }
   main aside {
     display: none;
   }
@@ -157,7 +160,7 @@ tr:hover {
     }
     td {
         text-align: right;
-        padding-left: 20%;
+        padding-left: 35%;
         position: relative;
     }
     td::before {
