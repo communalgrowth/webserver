@@ -1,7 +1,49 @@
 #!/usr/bin/env python3
 
+from time import time
 import socketserver as ss
 import redis
+
+limit_period = 60 * 60 * 24  # in seconds
+email_limit = 100  # per limit period
+email_providers = {
+    b"aol.com",
+    b"bk.ru",
+    b"fastmail.com",
+    b"fastmail.fm",
+    b"gmail.com",
+    b"gmx.com",
+    b"gmx.de",
+    b"gmx.net",
+    b"hotmail.com",
+    b"icloud.com",
+    b"inbox.ru",
+    b"keemail.me",
+    b"list.ru",
+    b"live.com",
+    b"mac.com",
+    b"mail.ru",
+    b"me.com",
+    b"messagingengine.com",
+    b"msn.com",
+    b"outlook.com",
+    b"pm.me",
+    b"proton.me",
+    b"protonmail.com",
+    b"rocketmail.com",
+    b"tuta.io",
+    b"tutamail.com",
+    b"tutanota.com",
+    b"tutanota.de",
+    b"web.de",
+    b"ya.ru",
+    b"yahoo.com",
+    b"yandex.com",
+    b"yandex.ru",
+    b"ymail.com",
+    b"zoho.com",
+    b"zohomail.com",
+}
 
 
 class PostfixPolicy(ss.BaseRequestHandler):
@@ -28,15 +70,28 @@ class PostfixPolicy(ss.BaseRequestHandler):
     def respond(self, request: dict[bytes, bytes]):
         """Handle and respond to the request"""
         email = request[b"sender"]
-        username, domain = email.split(b"@", 1)
-        key = b"PostfixPolicyQuota-%b" % email
-        count = self.redis_con.get(key)
-        if count > 100:
+        _, domain = email.split(b"@", 1)
+        if domain in email_providers:
+            key = b"PostfixPolicyQuota-%b" % email
+        else:
+            key = b"PostfixPolicyQuota-%b" % domain
+        value = self.redis_con.get(key)
+        if value is None:
+            since_time, count = int(time()), 0
+        else:
+            since_time, count = map(int, value.split(","))
+        count += 1
+        cur_time = int(time())
+        if cur_time - since_time > limit_period:
+            self.redis_con.set(key, b"%d,%d" % (cur_time, count))
+            self.request.send(b"action=DUNNO\n\n")
+        elif count > email_limit:
             self.request.send(
                 b"action=DEFER_IF_PERMIT 450 4.2.1 Daily quota exceeded.\n\n"
             )
         else:
-            self.request.send(b"action=OK\n\n")
+            self.redis_con.set(key, b"%d,%d" % (since_time, count))
+            self.request.send(b"action=DUNNO\n\n")
 
 
 def main():
