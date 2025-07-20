@@ -58,13 +58,19 @@ nav li {
     flex-shrink: 0;
 }
 
-pre.subscribe-example {
+div.subscribe-example {
+    white-space: pre;
+    font-family: monospace;
     display: inline-block;
     padding: 6px;
     justify-content: center;
     text-align: left;
     background-color: #D3D3D3;
     border: 2px solid purple;
+}
+
+span.unselectable {
+  user-select: none;
 }
 
 a.citation {
