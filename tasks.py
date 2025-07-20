@@ -30,7 +30,7 @@ def view_website(c):
     """
     View the website index with Firefox.
     """
-    c.run(f"firefox {html_dir.joinpath('index.html')}")
+    c.run(f"firefox {html_dir.joinpath('search.html')}")
 
 
 @task
