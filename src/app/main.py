@@ -49,8 +49,8 @@ def server_error_404(router: Request, exc: Exception) -> Template:
 
 
 class MyController(Controller):
-    # TODO turn on in production
-    # cache_control = CacheControlHeader(max_age=86_400, public=True)
+    cache_control = CacheControlHeader(max_age=86_400, public=True)
+
     @get("/about")
     async def about(self) -> Template:
         return Template(template_name="about.html.jinja2", context=global_ctx)
