@@ -7,11 +7,11 @@
     <title>{{ website_name }}</title>
   </head>
   <body>
-    <header><h1><a href="{{ website_root }}/{{ "index.html" if local_build }}" class="banner-link">{{ website_name }}</a></h1></header>
+    <header><h1><a href="{{ website_root }}/{{ "search.html" if local_build }}" class="banner-link">{{ website_name }}</a></h1></header>
     <nav>
       <ul>
         <li><a class="menu-button" href="{{ website_root }}/howto{{ ".html" if local_build }}">how&nbsp;to</a></li>
-        <li><a class="menu-button" href="{{ website_root }}/search{{ ".html" if local_build }}">search</a></li>
+        <li><a class="menu-button" href="{{ website_root }}/{{ "search.html" if local_build }}">search</a></li>
         <li><a class="menu-button" href="{{ website_root }}/subscribe{{ ".html" if local_build }}">subscribe</a></li>
         <li><a class="menu-button" href="{{ website_root }}/contact{{ ".html" if local_build }}">contact</a></li>
       </ul>

@@ -51,15 +51,15 @@ def server_error_404(router: Request, exc: Exception) -> Template:
 class MyController(Controller):
     # TODO turn on in production
     # cache_control = CacheControlHeader(max_age=86_400, public=True)
-    @get("/")
-    async def index(self) -> Template:
-        return Template(template_name="index.html.jinja2", context=global_ctx)
+    @get("/about")
+    async def about(self) -> Template:
+        return Template(template_name="about.html.jinja2", context=global_ctx)
 
     @get("/howto")
     async def howto(self) -> Template:
         return Template(template_name="howto.html.jinja2", context=global_ctx)
 
-    @get("/search", cache_control=CacheControlHeader(no_store=True))
+    @get("/", cache_control=CacheControlHeader(no_store=True))
     async def search(
         self, state: State, s: str = Parameter(default="", max_length=300)
     ) -> Template:
