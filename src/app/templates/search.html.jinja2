@@ -2,7 +2,7 @@
 {% block main_content %}
 <article>
 <h2>Search for others with similar interests</h2>
-<p>Search for books and articles already subscribed to by others:</p><br />
+<p>Search for books and articles already subscribed to by others and feel free to reach out to them to discuss the book, or <a href="{{website_root}}/subscribe{{ ".html" if local_build}}">subscribe</a> yourself to any book or document:</p><br />
 <div class="search-container">
   <form action="{{ website_root }}/{{ "search.html" if local_build }}" method="get">
     <input type="text" name="s" placeholder="Title, author…" {% if search_value %} value="{{ search_value }}" {% endif %}>
