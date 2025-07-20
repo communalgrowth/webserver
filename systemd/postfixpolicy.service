@@ -1,0 +1,16 @@
+[Unit]
+Description=Postfix Policy Python Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/gauss/webserver/.venv/bin/python3 -u /home/gauss/webserver/src/policyd/policyd.py
+Restart=always
+User=gauss
+Group=gauss
+StandardOutput=journal
+StandardError=journal
+Environment=CG_POLICY_PORT=61721
+
+[Install]
+WantedBy=multi-user.target
