@@ -27,6 +27,7 @@ dependencies = [
     "psycopg >= 3.2.9",
     "requests >= 2.32.4",
     "redis[hiredis] >= 5.1, < 6",
+    "pymilter >= 1.0.5",
 ]
 
 [project.optional-dependencies]
