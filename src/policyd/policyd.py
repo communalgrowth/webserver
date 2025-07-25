@@ -89,7 +89,10 @@ def sender_key(email: bytes) -> bytes:
     elif domain.endswith(b".edu"):
         key = b"PostfixPolicyQuota-%b" % email
     else:
-        key = b"PostfixPolicyQuota-%b" % domain
+        # Only use the second-level domain to disallow subdomain
+        # spamming.
+        sld = b".".join(domain.rsplit(b".", 2)[-2:])
+        key = b"PostfixPolicyQuota-%b" % sld
     return key
 
 
