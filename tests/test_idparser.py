@@ -127,6 +127,7 @@ def test_idparse():
             inputs=[
                 "10.1103/PhysRevD.13.191",
                 "doi:10.1103/PhysRevD.13.191",
+                "DOI:10.1103/PhysRevD.13.191",
                 "https://doi.org/10.1103/PhysRevD.13.191",
                 "http://doi.org/10.1103/PhysRevD.13.191",
                 "https://www.doi.org/10.1103/PhysRevD.13.191",

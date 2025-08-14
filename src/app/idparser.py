@@ -95,7 +95,7 @@ doi_link: HTTP? WWW? /doi.org\//i doi_name
 doi_name: DOI_PREFIX "/" DOI_SUFFIX
 DOI_PREFIX: ALNUM+ (("." | "-") ALNUM+)*
 DOI_SUFFIX: ALNUM+ (("." | "-") ALNUM+)*
-DOI_LITERAL: "doi:"
+DOI_LITERAL: /doi:/i
 
 // Parse an arXiv identifier.
 
